@@ -1,0 +1,394 @@
+<app-sidebar>
+  <!-- Main Content -->
+  <div class="dashboard-page">
+    <!-- Header -->
+    <header class="dashboard-header">
+      <div class="header-left">
+        <h1 class="page-title">Dashboard</h1>
+        <p class="page-subtitle">Welcome back! Here's what's happening today</p>
+      </div>
+
+      <div class="header-right">
+        <div class="view-toggle">
+          <button
+            [class.active]="selectedView === 'today'"
+            (click)="toggleView('today')"
+            class="toggle-btn"
+          >
+            <i class="fa-solid fa-calendar-day btn-icon"></i> Today
+          </button>
+          <button
+            [class.active]="selectedView === 'all'"
+            (click)="toggleView('all')"
+            class="toggle-btn"
+          >
+            <i class="fa-solid fa-calendar-days btn-icon"></i> All Day
+          </button>
+        </div>
+        <button class="export-btn">
+          <i class="fa-solid fa-download btn-icon"></i> Export Data
+        </button>
+      </div>
+    </header>
+
+    <!-- Loading State -->
+    <div *ngIf="isLoading" class="loading-state">
+      <mat-spinner diameter="50"></mat-spinner>
+      <p>Loading dashboard data...</p>
+    </div>
+
+    <!-- Dashboard Content -->
+    <div *ngIf="!isLoading" class="dashboard-content">
+      <!-- Metrics Cards -->
+      <div class="metrics-grid">
+        <div class="metric-card" *ngIf="metrics?.todaySales">
+          <div class="metric-icon blue">
+            <i class="fa-solid fa-coins"></i>
+          </div>
+          <div class="metric-info">
+            <p class="metric-label">{{ metrics?.todaySales?.label }}</p>
+            <h3 class="metric-value">{{ metrics?.todaySales?.value }}</h3>
+            <span
+              [class]="getChangeClass(metrics?.todaySales?.change ?? 0)"
+              class="metric-change"
+            >
+              <i
+                class="fa-solid"
+                [class.fa-arrow-up]="metrics!.todaySales.change > 0"
+                [class.fa-arrow-down]="metrics!.todaySales.change < 0"
+              ></i>
+              {{ metrics?.todaySales?.changeLabel }}
+            </span>
+          </div>
+        </div>
+
+        <div class="metric-card" *ngIf="metrics?.transactions">
+          <div class="metric-icon green">
+            <i class="fa-solid fa-chart-column"></i>
+          </div>
+          <div class="metric-info">
+            <p class="metric-label">{{ metrics?.transactions?.label }}</p>
+            <h3 class="metric-value">{{ metrics?.transactions?.value }}</h3>
+            <span
+              [class]="getChangeClass(metrics?.transactions?.change ?? 0)"
+              class="metric-change"
+            >
+              <i
+                class="fa-solid"
+                [class.fa-arrow-up]="metrics!.transactions.change > 0"
+                [class.fa-arrow-down]="metrics!.transactions.change < 0"
+              ></i>
+              {{ metrics?.transactions?.changeLabel }}
+            </span>
+          </div>
+        </div>
+
+        <div class="metric-card" *ngIf="metrics?.avgBillValue">
+          <div class="metric-icon purple">
+            <i class="fa-solid fa-receipt"></i>
+          </div>
+          <div class="metric-info">
+            <p class="metric-label">{{ metrics?.avgBillValue?.label }}</p>
+            <h3 class="metric-value">{{ metrics?.avgBillValue?.value }}</h3>
+            <span
+              [class]="getChangeClass(metrics?.avgBillValue?.change ?? 0)"
+              class="metric-change"
+            >
+              <i
+                class="fa-solid"
+                [class.fa-arrow-up]="metrics!.avgBillValue.change > 0"
+                [class.fa-arrow-down]="metrics!.avgBillValue.change < 0"
+              ></i>
+              {{ metrics?.avgBillValue?.changeLabel }}
+            </span>
+          </div>
+        </div>
+
+        <div class="metric-card" *ngIf="metrics?.paymentSplit">
+          <div class="metric-icon orange">
+            <i class="fa-solid fa-credit-card"></i>
+          </div>
+          <div class="metric-info">
+            <p class="metric-label">{{ metrics?.paymentSplit?.label }}</p>
+            <h3 class="metric-value">{{ metrics?.paymentSplit?.value }}</h3>
+            <span class="metric-subtext">{{
+              metrics?.paymentSplit?.changeLabel
+            }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Charts and Tables Row -->
+      <div class="charts-row">
+        <!-- Sales Trend Chart -->
+        <div class="chart-card sales-trend">
+          <div class="card-header">
+            <h3>Sales Trend</h3>
+            <div class="chart-controls">
+              <button
+                class="chart-btn"
+                [class.active]="chartType === 'bar'"
+                (click)="chartType = 'bar'"
+                matTooltip="Bar Chart"
+              >
+                <i class="fa-solid fa-chart-column"></i>
+              </button>
+              <button
+                class="chart-btn"
+                [class.active]="chartType === 'line'"
+                (click)="chartType = 'line'"
+                matTooltip="Line Chart"
+              >
+                <i class="fa-solid fa-chart-line"></i>
+              </button>
+            </div>
+          </div>
+          <div class="chart-container">
+            <canvas
+              baseChart
+              [data]="salesTrendChartData"
+              [options]="salesTrendChartOptions"
+              [type]="chartType"
+            >
+            </canvas>
+          </div>
+        </div>
+
+        <!-- Top Performing Products -->
+        <div class="table-card">
+          <div class="card-header">
+            <h3>Top Performing Products</h3>
+            <button class="icon-btn" matTooltip="View All">
+              <i class="fa-solid fa-up-right-from-square"></i>
+            </button>
+          </div>
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Product</th>
+                  <th>Amount</th>
+                  <th>Change</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let product of topProducts">
+                  <td>{{ product.rank }}</td>
+                  <td>
+                    <div class="product-info">
+                      <span class="product-name">{{ product.name }}</span>
+                      <span class="product-category">{{
+                        product.category
+                      }}</span>
+                    </div>
+                  </td>
+                  <td class="amount">{{ formatCurrency(product.amount) }}</td>
+                  <td>
+                    <span
+                      [class]="getChangeClass(product.change || 0)"
+                      class="change-badge"
+                    >
+                      <i
+                        class="fa-solid"
+                        [class.fa-arrow-up]="product?.change! > 0"
+                        [class.fa-arrow-down]="product?.change! < 0"
+                      ></i>
+                      {{ product.change }}%
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Second Row -->
+      <div class="info-row">
+        <!-- Top Customers -->
+        <div class="list-card">
+          <div class="card-header">
+            <h3>
+              <i class="fa-solid fa-users header-icon"></i>
+              Top Performing Customers
+            </h3>
+          </div>
+          <div class="list-container">
+            <div class="list-item" *ngFor="let customer of topCustomers">
+              <div class="item-rank">{{ customer.rank }}</div>
+              <div class="item-info">
+                <span class="item-name">{{ customer.name }}</span>
+                <span class="item-meta">{{ customer.type }}</span>
+              </div>
+              <div class="item-value">
+                {{ formatCurrency(customer.amount) }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Top Brands -->
+        <div class="list-card">
+          <div class="card-header">
+            <h3>
+              <i class="fa-solid fa-tags header-icon"></i>
+              Top Selling Brands
+            </h3>
+          </div>
+          <div class="list-container">
+            <div class="list-item" *ngFor="let brand of topBrands">
+              <div class="item-rank">{{ brand.rank }}</div>
+              <div class="item-info">
+                <span class="item-name">{{ brand.name }}</span>
+                <span class="item-meta">{{ brand.type }}</span>
+              </div>
+              <div class="item-value">{{ formatCurrency(brand.amount) }}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Inventory Alerts -->
+        <div class="alert-card">
+          <div class="card-header">
+            <h3>
+              <i
+                class="fa-solid fa-triangle-exclamation header-icon warning"
+              ></i>
+              Inventory Alerts
+            </h3>
+          </div>
+          <div class="alert-container">
+            <div class="alert-item" *ngFor="let alert of inventoryAlerts">
+              <div class="alert-info">
+                <span class="alert-product">{{ alert.productName }}</span>
+                <span class="alert-stock"
+                  >{{ alert.currentStock }} {{ alert.unit }}</span
+                >
+              </div>
+              <div class="alert-bar">
+                <div
+                  class="alert-progress"
+                  [class]="getStatusClass(alert.status)"
+                  [style.width.%]="alert.percentage"
+                ></div>
+              </div>
+              <span class="alert-percentage">{{ alert.percentage }}%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Payment Methods -->
+        <div class="payment-card">
+          <div class="card-header">
+            <h3>
+              <i class="fa-solid fa-wallet header-icon"></i>
+              Payment Methods
+            </h3>
+            <span class="subtitle">Customer spending</span>
+          </div>
+          <div class="payment-chart">
+            <div class="donut-chart">
+              <svg viewBox="0 0 200 200" class="donut">
+                <circle
+                  cx="100"
+                  cy="100"
+                  r="80"
+                  fill="none"
+                  stroke="#e5e7eb"
+                  stroke-width="30"
+                />
+                <circle
+                  *ngFor="let method of paymentMethods; let i = index"
+                  cx="100"
+                  cy="100"
+                  r="80"
+                  fill="none"
+                  [attr.stroke]="method.color"
+                  stroke-width="30"
+                  [attr.stroke-dasharray]="
+                    (method.percentage * 502.65) / 100 + ' 502.65'
+                  "
+                  [attr.stroke-dashoffset]="getStrokeDashOffset(i)"
+                  transform="rotate(-90 100 100)"
+                />
+              </svg>
+            </div>
+          </div>
+          <div class="payment-legend">
+            <div class="legend-item" *ngFor="let method of paymentMethods">
+              <div class="legend-color" [style.background]="method.color"></div>
+              <span class="legend-label">{{ method.method }}</span>
+              <span class="legend-value">{{ method.percentage }}%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Branch Snapshot -->
+      <div class="branch-snapshot">
+        <div class="card-header">
+          <h3>
+            <i class="fa-solid fa-store header-icon"></i>
+            Branch Snapshot
+          </h3>
+        </div>
+        <div class="branch-grid">
+          <div class="branch-card" *ngFor="let branch of branches">
+            <div class="branch-header">
+              <h4>
+                <i class="fa-solid fa-location-dot branch-icon"></i>
+                {{ branch.branchName }}
+              </h4>
+              <span
+                [class]="getStatusClass(branch.status)"
+                class="branch-status"
+              >
+                <i
+                  class="fa-solid status-icon"
+                  [ngClass]="{
+                    'fa-arrow-up text-green-500': branch.performance > 0,
+                    'fa-arrow-down text-red-500': branch.performance < 0,
+                  }"
+                ></i>
+                {{ branch.performance > 0 ? "+" : "" }}{{ branch.performance }}%
+              </span>
+            </div>
+            <div class="branch-stats">
+              <div class="stat">
+                <i class="fa-solid fa-wallet stat-icon"></i>
+                <div class="stat-content">
+                  <span class="stat-label">Revenue</span>
+                  <span class="stat-value">{{
+                    formatCurrency(branch.revenue)
+                  }}</span>
+                </div>
+              </div>
+              <div class="stat">
+                <i class="fa-solid fa-cart-shopping stat-icon"></i>
+                <div class="stat-content">
+                  <span class="stat-label">Sales</span>
+                  <span class="stat-value">{{ branch.sales }}</span>
+                </div>
+              </div>
+              <div class="stat">
+                <i class="fa-solid fa-receipt stat-icon"></i>
+                <div class="stat-content">
+                  <span class="stat-label">Transactions</span>
+                  <span class="stat-value">{{ branch.transactions }}</span>
+                </div>
+              </div>
+              <div class="stat">
+                <i class="fa-solid fa-user-group stat-icon"></i>
+                <div class="stat-content">
+                  <span class="stat-label">Customers</span>
+                  <span class="stat-value">{{ branch.customers }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</app-sidebar>

@@ -1,0 +1,450 @@
+<!-- detaileddashboard.html — UPDATED with filter system -->
+
+<div class="dashboard-shell">
+  <app-sidebar>
+    <div class="content-row">
+      <!-- ─── New: Filter Panel (left sidebar) ──────────────────────────── -->
+      <app-filter-panel></app-filter-panel>
+
+      <main
+        class="main-content"
+        [class.sidebar-expanded]="isExpanded"
+        [class.sidebar-collapsed]="!isExpanded"
+      >
+        <!-- ─── Top Bar ─────────────────────────────────────────────────── -->
+        <header class="top-bar">
+          <div class="top-bar-left">
+            <h1 class="page-title">Analytics Dashboard</h1>
+            <span class="date-badge">
+              <span class="material-icons">calendar_today</span>
+              {{ today | date: "EEEE, MMM d, y" }}
+            </span>
+          </div>
+          <div class="top-bar-right">
+            <!-- Topic tabs — drive FilterStateService -->
+            <div class="topic-tabs">
+              <button
+                *ngFor="let t of topics"
+                class="topic-tab"
+                [class.active]="activeTopic === t.topicId"
+                [style.--tc]="t.color"
+                (click)="setActiveTopic(t.topicId)"
+              >
+                <span class="material-icons">{{ t.icon }}</span>
+                {{ t.label }}
+              </button>
+            </div>
+
+            <!-- Period selector (controls data loading) -->
+            <div class="period-selector">
+              <button
+                class="period-btn"
+                [class.active]="selectedPeriod === 'today'"
+                (click)="changePeriod('today')"
+              >
+                Today
+              </button>
+              <button
+                class="period-btn"
+                [class.active]="selectedPeriod === 'week'"
+                (click)="changePeriod('week')"
+              >
+                Week
+              </button>
+              <button
+                class="period-btn"
+                [class.active]="selectedPeriod === 'month'"
+                (click)="changePeriod('month')"
+              >
+                Month
+              </button>
+              <button
+                class="period-btn"
+                [class.active]="selectedPeriod === 'year'"
+                (click)="changePeriod('year')"
+              >
+                Year
+              </button>
+            </div>
+
+            <button
+              class="customize-btn"
+              (click)="showCustomizer = !showCustomizer"
+            >
+              <span class="material-icons">tune</span>Customize
+            </button>
+            <div class="avatar">SR</div>
+          </div>
+        </header>
+
+        <!-- ─── New: Drill Breadcrumb ──────────────────────────────────── -->
+        <div class="breadcrumb-bar">
+          <app-drill-breadcrumb></app-drill-breadcrumb>
+        </div>
+
+        <!-- ─── New: Active Filter Bar ────────────────────────────────── -->
+        <app-active-filter-bar></app-active-filter-bar>
+
+        <!-- ─── Legacy Filter Bar (keep if needed) ────────────────────── -->
+        <!-- <app-filter-bar></app-filter-bar> -->
+
+        <!-- ─── Loading ───────────────────────────────────────────────── -->
+        <div class="loading-overlay" *ngIf="loading">
+          <div class="loader-ring"></div>
+          <p>Loading analytics...</p>
+        </div>
+
+        <!-- ─── Dashboard Grid ─────────────────────────────────────────── -->
+        <div class="dashboard-scroll" *ngIf="!loading && analytics">
+          <div class="empty-state" *ngIf="widgets.length === 0">
+            <span class="material-icons">widgets</span>
+            <h3>No widgets visible</h3>
+            <p>
+              Click <strong>Customize</strong> to add widgets to your dashboard.
+            </p>
+          </div>
+
+          <ng-container *ngFor="let topic of topics">
+            <ng-container
+              *ngIf="getVisibleWidgetsByTopic(topic.key) as topicWidgets"
+            >
+              <section class="topic-section" *ngIf="topicWidgets.length > 0">
+                <div class="topic-section-header">
+                  <div class="topic-section-title" [style.color]="topic.color">
+                    <span class="material-icons">{{ topic.icon }}</span>
+                    <span>{{ topic.label }}</span>
+                  </div>
+                  <div
+                    class="topic-section-line"
+                    [style.background]="topic.color"
+                  ></div>
+                </div>
+
+                <div class="topic-widget-row">
+                  <div
+                    *ngFor="let widget of topicWidgets; trackBy: trackByWidget"
+                    class="widget-cell"
+                    [class.size-small]="widget.size === 'small'"
+                    [class.size-medium]="widget.size === 'medium'"
+                    [class.size-large]="widget.size === 'large'"
+                    [class.size-full]="widget.size === 'full'"
+                    [class.drag-over]="dragOverIndex === widget.order"
+                    [class.dragging]="draggedWidget?.id === widget.id"
+                    draggable="true"
+                    (dragstart)="onDragStart($event, widget)"
+                    (dragover)="onDragOver($event, widget.order)"
+                    (dragleave)="onDragLeave()"
+                    (drop)="onDrop($event, widget.order)"
+                    (dragend)="onDragEnd()"
+                  >
+                    <div class="widget-drag-handle">
+                      <span class="material-icons">drag_indicator</span>
+                    </div>
+
+                    <!-- Sales widgets -->
+                    <app-sales-metrics-widget
+                      *ngIf="widget.id === 'sales-metrics'"
+                      [data]="analytics.dashboard.metrics"
+                    ></app-sales-metrics-widget>
+
+                    <!-- SalesTrendWidget now self-manages via FilterStateService -->
+                    <app-sales-trend-widget
+                      *ngIf="widget.id === 'sales-trend'"
+                    ></app-sales-trend-widget>
+
+                    <app-top-products-widget
+                      *ngIf="widget.id === 'top-products'"
+                      [data]="analytics.dashboard.topProducts"
+                    ></app-top-products-widget>
+
+                    <app-branch-performance-widget
+                      *ngIf="widget.id === 'branch-performance'"
+                      [data]="analytics.dashboard.branches"
+                    ></app-branch-performance-widget>
+
+                    <app-payment-methods-widget
+                      *ngIf="widget.id === 'payment-methods'"
+                      [data]="analytics.dashboard.paymentMethods"
+                    ></app-payment-methods-widget>
+
+                    <!-- Customer widgets -->
+                    <app-customer-segments-widget
+                      *ngIf="widget.id === 'customer-segments'"
+                    ></app-customer-segments-widget>
+
+                    <app-top-customers-widget
+                      *ngIf="widget.id === 'top-customers'"
+                      [data]="analytics.dashboard.topCustomers"
+                    ></app-top-customers-widget>
+
+                    <app-customer-retention-widget
+                      *ngIf="widget.id === 'customer-retention'"
+                    ></app-customer-retention-widget>
+
+                    <app-customer-satisfaction-widget
+                      *ngIf="widget.id === 'customer-satisfaction'"
+                    ></app-customer-satisfaction-widget>
+
+                    <!-- Inventory widgets -->
+                    <app-inventory-alerts-widget
+                      *ngIf="widget.id === 'inventory-alerts'"
+                      [data]="analytics.dashboard.inventoryAlerts"
+                    ></app-inventory-alerts-widget>
+
+                    <app-stock-levels-widget
+                      *ngIf="widget.id === 'stock-levels'"
+                      [data]="analytics.dashboard.inventoryAlerts"
+                    ></app-stock-levels-widget>
+
+                    <app-top-brands-widget
+                      *ngIf="widget.id === 'top-brands'"
+                      [data]="analytics.dashboard.topBrands"
+                    ></app-top-brands-widget>
+
+                    <!-- Promotions widgets -->
+                    <app-active-promotions-widget
+                      *ngIf="widget.id === 'active-promotions'"
+                    ></app-active-promotions-widget>
+
+                    <app-promo-performance-widget
+                      *ngIf="widget.id === 'promo-performance'"
+                    ></app-promo-performance-widget>
+
+                    <app-promo-summary-widget
+                      *ngIf="widget.id === 'promo-summary'"
+                    ></app-promo-summary-widget>
+
+                    <!-- Profitability widgets -->
+                    <app-profit-overview-widget
+                      *ngIf="widget.id === 'profit-overview'"
+                      [data]="analytics.insights.metrics"
+                    ></app-profit-overview-widget>
+
+                    <app-category-profit-widget
+                      *ngIf="widget.id === 'category-profit'"
+                      [data]="analytics.insights.profitability"
+                    ></app-category-profit-widget>
+
+                    <app-store-performance-widget
+                      *ngIf="widget.id === 'store-performance'"
+                      [data]="analytics.insights.storePerformances"
+                    ></app-store-performance-widget>
+
+                    <app-profit-margin-widget
+                      *ngIf="widget.id === 'profit-margin'"
+                      [data]="analytics.insights.metrics"
+                    ></app-profit-margin-widget>
+
+                    <!-- Wastage widgets -->
+                    <app-wastage-summary-widget
+                      *ngIf="widget.id === 'wastage-summary'"
+                    ></app-wastage-summary-widget>
+
+                    <app-wastage-trend-widget
+                      *ngIf="widget.id === 'wastage-trend'"
+                    ></app-wastage-trend-widget>
+
+                    <app-wastage-by-category-widget
+                      *ngIf="widget.id === 'wastage-by-category'"
+                    ></app-wastage-by-category-widget>
+                  </div>
+                </div>
+              </section>
+            </ng-container>
+          </ng-container>
+        </div>
+      </main>
+    </div>
+
+    <!-- ─── Customizer Panel (unchanged) ──────────────────────────────── -->
+    <div
+      class="customizer-overlay"
+      [class.open]="showCustomizer"
+      (click)="showCustomizer = false"
+    ></div>
+    <aside class="customizer-panel" [class.open]="showCustomizer">
+      <div class="customizer-header">
+        <h2>Customize Dashboard</h2>
+        <div class="customizer-actions">
+          <button class="reset-btn" (click)="resetWidgets()">
+            <span class="material-icons">restart_alt</span> Reset
+          </button>
+          <button class="close-btn" (click)="showCustomizer = false">
+            <span class="material-icons">close</span>
+          </button>
+        </div>
+      </div>
+      <p class="customizer-hint">
+        Toggle widgets on/off. Drag widgets on the dashboard to reorder.
+      </p>
+      <div class="search-box">
+        <span class="material-icons">search</span>
+        <input
+          type="text"
+          placeholder="Search widgets..."
+          [(ngModel)]="searchQuery"
+        />
+      </div>
+      <div class="topic-filters">
+        <button
+          class="topic-filter-btn"
+          [class.active]="activeTopicFilter === 'all'"
+          (click)="activeTopicFilter = 'all'"
+        >
+          All
+        </button>
+        <button
+          *ngFor="let topic of topics"
+          class="topic-filter-btn"
+          [class.active]="activeTopicFilter === topic.key"
+          [style.--topic-color]="topic.color"
+          (click)="activeTopicFilter = topic.key"
+        >
+          <span class="material-icons">{{ topic.icon }}</span
+          >{{ topic.label }}
+        </button>
+      </div>
+      <div class="customizer-widget-list">
+        <ng-container *ngFor="let topic of topics">
+          <div
+            class="topic-group"
+            *ngIf="
+              filteredCustomizerWidgets | topicFilter: topic.key as topicWidgets
+            "
+          >
+            <div
+              class="topic-group-header"
+              *ngIf="topicWidgets.length > 0"
+              [style.border-color]="topic.color"
+            >
+              <span class="material-icons" [style.color]="topic.color">{{
+                topic.icon
+              }}</span>
+              <span>{{ topic.label }}</span>
+              <span class="badge"
+                >{{ getVisibleCount(topic.key) }}/{{
+                  getTotalCount(topic.key)
+                }}</span
+              >
+            </div>
+            <div
+              class="customizer-widget-item"
+              *ngFor="let widget of topicWidgets"
+            >
+              <div class="widget-item-info">
+                <span
+                  class="material-icons widget-icon"
+                  [style.color]="topic.color"
+                  >{{ widget.icon }}</span
+                >
+                <div>
+                  <div class="widget-item-title">{{ widget.title }}</div>
+                  <div class="widget-item-size">
+                    {{ widget.size | titlecase }} widget
+                  </div>
+                </div>
+              </div>
+              <button
+                class="toggle-btn"
+                [class.active]="widget.visible"
+                (click)="toggleWidget(widget.id)"
+              >
+                <span class="material-icons">{{
+                  widget.visible ? "visibility" : "visibility_off"
+                }}</span>
+              </button>
+            </div>
+          </div>
+        </ng-container>
+      </div>
+    </aside>
+
+    <!-- ─── AI Chat Panel (unchanged) ──────────────────────────────────── -->
+    <aside class="ai-chat-panel" [class.open]="showChat">
+      <div class="chat-header">
+        <div class="chat-header-left">
+          <div class="chat-avatar-pulse">
+            <span class="material-icons">auto_awesome</span>
+          </div>
+          <div>
+            <h2>Ask RetailIQ</h2>
+            <span class="chat-status">AI Analytics Assistant</span>
+          </div>
+        </div>
+        <button class="close-btn" (click)="showChat = false">
+          <span class="material-icons">close</span>
+        </button>
+      </div>
+      <div class="chat-messages">
+        <div class="chat-welcome" *ngIf="chatMessages.length === 0">
+          <span class="material-icons welcome-icon">insights</span>
+          <p>
+            Ask anything about your store's performance, products, customers, or
+            trends.
+          </p>
+          <div class="quick-prompts">
+            <button
+              class="quick-prompt-btn"
+              *ngFor="let q of quickPrompts"
+              (click)="sendQuickPrompt(q)"
+            >
+              {{ q }}
+            </button>
+          </div>
+        </div>
+        <div
+          *ngFor="let msg of chatMessages"
+          class="chat-message"
+          [class.user]="msg.role === 'user'"
+          [class.ai]="msg.role === 'ai'"
+        >
+          <div class="msg-avatar" *ngIf="msg.role === 'ai'">
+            <span class="material-icons">auto_awesome</span>
+          </div>
+          <div class="msg-bubble">
+            <p>{{ msg.content }}</p>
+            <span class="msg-time">{{ msg.time | date: "h:mm a" }}</span>
+          </div>
+        </div>
+        <div class="chat-message ai typing" *ngIf="chatLoading">
+          <div class="msg-avatar">
+            <span class="material-icons">auto_awesome</span>
+          </div>
+          <div class="msg-bubble">
+            <div class="typing-dots">
+              <span></span><span></span><span></span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="chat-input-area">
+        <textarea
+          class="chat-input"
+          [(ngModel)]="chatInput"
+          placeholder="Ask about sales, inventory, customers..."
+          rows="1"
+          (keydown.enter)="$event.preventDefault(); sendChat()"
+          (input)="autoResize($event)"
+        ></textarea>
+        <button
+          class="send-btn"
+          (click)="sendChat()"
+          [disabled]="!chatInput.trim() || chatLoading"
+        >
+          <span class="material-icons">{{
+            chatLoading ? "hourglass_top" : "send"
+          }}</span>
+        </button>
+      </div>
+    </aside>
+
+    <button
+      class="chat-fab"
+      (click)="showChat = !showChat"
+      [class.active]="showChat"
+    >
+      <span class="material-icons">{{ showChat ? "close" : "chat" }}</span>
+      <span class="fab-label" *ngIf="!showChat">Ask AI</span>
+    </button>
+  </app-sidebar>
+</div>

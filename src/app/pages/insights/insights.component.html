@@ -1,0 +1,350 @@
+<app-sidebar>
+  <div class="insights-container">
+    <!-- Main Content -->
+    <main class="main-content">
+      <!-- Header -->
+      <header class="insights-header">
+        <div class="header-left">
+          <h1 class="page-title">Insights</h1>
+          <p class="page-subtitle">Analyze your business performance</p>
+        </div>
+
+        <div class="header-right">
+          <button class="export-btn">+ Export Data</button>
+        </div>
+      </header>
+
+      <!-- Loading State -->
+      <div *ngIf="isLoading" class="loading-state">
+        <div class="spinner"></div>
+        <p>Loading insights...</p>
+      </div>
+
+      <!-- Insights Content -->
+      <div *ngIf="!isLoading" class="insights-content">
+        <!-- Top Metrics -->
+        <div class="top-metrics">
+          <div class="metric-card" *ngIf="metrics?.revenueGrowth">
+            <div class="metric-icon green">
+              <svg
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="white"
+                stroke-width="2"
+              >
+                <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+              </svg>
+            </div>
+            <div class="metric-content">
+              <p class="metric-label">{{ metrics?.revenueGrowth?.label }}</p>
+              <h3 class="metric-value">{{ metrics?.revenueGrowth?.value }}</h3>
+            </div>
+          </div>
+
+          <div class="metric-card" *ngIf="metrics?.avgProfitMargin">
+            <div class="metric-icon blue">
+              <svg
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="white"
+                stroke-width="2"
+              >
+                <circle cx="12" cy="12" r="10"></circle>
+                <path d="M12 6v6l4 2"></path>
+              </svg>
+            </div>
+            <div class="metric-content">
+              <p class="metric-label">{{ metrics?.avgProfitMargin?.label }}</p>
+              <h3 class="metric-value">
+                {{ metrics?.avgProfitMargin?.value }}
+              </h3>
+            </div>
+          </div>
+
+          <div class="metric-card" *ngIf="metrics?.salesRepTransaction">
+            <div class="metric-icon purple">
+              <svg
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="white"
+                stroke-width="2"
+              >
+                <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+              </svg>
+            </div>
+            <div class="metric-content">
+              <p class="metric-label">
+                {{ metrics?.salesRepTransaction?.label }}
+              </p>
+              <h3 class="metric-value">
+                {{ metrics?.salesRepTransaction?.value }}
+              </h3>
+            </div>
+          </div>
+
+          <div class="metric-card" *ngIf="metrics?.avgDays">
+            <div class="metric-icon orange">
+              <svg
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="white"
+                stroke-width="2"
+              >
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="16" y1="2" x2="16" y2="6"></line>
+                <line x1="8" y1="2" x2="8" y2="6"></line>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+              </svg>
+            </div>
+            <div class="metric-content">
+              <p class="metric-label">{{ metrics?.avgDays?.label }}</p>
+              <h3 class="metric-value">{{ metrics?.avgDays?.value }}</h3>
+            </div>
+          </div>
+        </div>
+
+        <!-- Charts Row 1 -->
+        <div class="charts-section">
+          <!-- Daily Sales Trend -->
+          <div class="chart-card large">
+            <div class="card-header">
+              <div>
+                <h3>Daily Sales Trend</h3>
+                <p class="card-subtitle" *ngIf="dailySales">
+                  Best Day: {{ dailySales?.bestDay }} ({{
+                    dailySales?.bestDayValue
+                  }})
+                </p>
+              </div>
+              <div class="header-stats" *ngIf="dailySales">
+                <div class="stat-item">
+                  <span class="stat-label">{{ dailySales?.recentDay }}</span>
+                  <span class="stat-value negative">-11.8%</span>
+                </div>
+              </div>
+            </div>
+            <div class="chart-wrapper">
+              <canvas
+                baseChart
+                [data]="dailySalesChartData"
+                [options]="dailySalesChartOptions"
+                type="bar"
+              >
+              </canvas>
+            </div>
+            <div class="chart-footer" *ngIf="dailySales">
+              <div class="footer-stat">
+                <span class="label">Best Day</span>
+                <span class="value">{{ dailySales?.bestDay }}</span>
+              </div>
+              <div class="footer-stat">
+                <span class="label">Best Day Value (LKR)</span>
+                <span class="value">{{ dailySales?.bestDayValue }}</span>
+              </div>
+              <div class="footer-stat">
+                <span class="label">Avg Actual Sales</span>
+                <span class="value">{{ dailySales?.avgDailySales }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Recent Sales Pattern -->
+          <div class="chart-card small">
+            <div class="card-header">
+              <h3>💰 Heavy Sales Pattern</h3>
+              <div class="trend-indicator" *ngIf="recentSalesPattern">
+                <span class="trend-value positive"
+                  >{{ recentSalesPattern?.maxValue }} LKR</span
+                >
+              </div>
+            </div>
+            <div class="chart-wrapper">
+              <canvas
+                baseChart
+                [data]="recentSalesChartData"
+                [options]="recentSalesChartOptions"
+                type="bar"
+              >
+              </canvas>
+            </div>
+            <div class="chart-info">
+              <p class="info-text" *ngIf="recentSalesPattern">
+                Past 1Mo:
+                <strong>{{ recentSalesPattern!.values[0] }} LKR</strong>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Profitability and Best Selling -->
+        <div class="analysis-section">
+          <!-- Profitability Analysis -->
+          <div class="analysis-card">
+            <div class="card-header">
+              <h3>Profitability Analysis</h3>
+              <p class="card-subtitle">
+                A Snapshot of Profitability Across Different Categories
+              </p>
+            </div>
+            <div class="profitability-list">
+              <div class="profit-item" *ngFor="let item of profitability">
+                <div class="profit-category">{{ item.category }}</div>
+                <div class="profit-bar-container">
+                  <div
+                    class="profit-bar"
+                    [style.width.%]="(item.grossProfit / 20000000) * 100"
+                    [style.background]="item.color"
+                  ></div>
+                </div>
+                <div class="profit-value">
+                  {{ formatLargeCurrency(item.grossProfit) }}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Best Selling Products -->
+          <div class="analysis-card">
+            <div class="card-header">
+              <h3>Best Selling Products</h3>
+            </div>
+            <div class="products-table">
+              <table>
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Product</th>
+                    <th>Quantity</th>
+                    <th>Change</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let product of bestSellingProducts">
+                    <td>
+                      <div class="rank-badge" [class]="'rank-' + product.rank">
+                        {{ product.rank }}
+                      </div>
+                    </td>
+                    <td>
+                      <div class="product-info">
+                        <span class="product-name">{{ product.name }}</span>
+                        <span class="product-category">{{
+                          product.category
+                        }}</span>
+                      </div>
+                    </td>
+                    <td class="quantity">
+                      {{ formatCurrency(product.quantity) }}
+                    </td>
+                    <td>
+                      <span
+                        [class]="getChangeClass(product.change)"
+                        class="change-badge"
+                      >
+                        {{ product.change > 0 ? "+" : "" }}{{ product.change }}%
+                      </span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Store Performance -->
+        <div class="performance-section">
+          <div class="section-header">
+            <h3>Store Performance Comparison</h3>
+            <p class="section-subtitle">
+              Breakdown by geographic location for better clarity
+            </p>
+          </div>
+
+          <div class="performance-grid">
+            <div
+              class="performance-card"
+              *ngFor="let store of storePerformances"
+            >
+              <div class="store-header">
+                <div class="store-name">
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <path
+                      d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"
+                    ></path>
+                  </svg>
+                  <h4>{{ store.storeName }}</h4>
+                </div>
+                <span
+                  [class]="getPerformanceClass(store.performance)"
+                  class="performance-badge"
+                >
+                  {{ store.performance > 0 ? "+" : "" }}{{ store.performance }}%
+                </span>
+              </div>
+
+              <div class="store-metrics">
+                <div class="metric-row">
+                  <div class="metric-item">
+                    <span class="label">Revenue</span>
+                    <span class="value">{{
+                      formatCurrency(store.revenue)
+                    }}</span>
+                  </div>
+                  <div class="metric-item">
+                    <span class="label">Avg Bill Value</span>
+                    <span class="value">{{
+                      formatCurrency(store.avgBillValue)
+                    }}</span>
+                  </div>
+                </div>
+
+                <div class="metric-row">
+                  <div class="metric-item">
+                    <span class="label">Transactions</span>
+                    <span class="value">{{ store.transactions }}</span>
+                  </div>
+                  <div class="metric-item">
+                    <span class="label">Purchase Frequency</span>
+                    <span class="value">{{ store.purchaseFrequency }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="performance-bar">
+                <div
+                  class="bar-fill"
+                  [class]="getPerformanceClass(store.performance)"
+                  [style.width.%]="Math.min(Math.abs(store.performance), 100)"
+                ></div>
+              </div>
+
+              <div class="store-footer">
+                <span class="footer-label">Performance</span>
+                <span class="footer-value"
+                  >{{ store.performance > 0 ? "+" : ""
+                  }}{{ store.performance }}%</span
+                >
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</app-sidebar>

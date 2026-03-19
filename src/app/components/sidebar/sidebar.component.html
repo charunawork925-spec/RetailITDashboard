@@ -1,0 +1,73 @@
+<mat-sidenav-container class="sidebar-container" autosize>
+  <mat-sidenav
+    #sidenav
+    [mode]="'side'"
+    [opened]="true"
+    [class.expanded]="isExpanded"
+    [class.collapsed]="!isExpanded"
+    class="app-sidenav"
+  >
+    <!-- Logo Section -->
+    <div class="logo-section">
+      <div class="logo-content" [class.centered]="!isExpanded">
+        <div class="logo-icon">
+          <i class="fas fa-laptop-file mr-2"></i>
+          <!-- <img
+            src="assets/retailit-logo.png"
+            alt="Retail IT Logo"
+            class="brand-logo"
+          /> -->
+          <!-- <i class="fa-solid fa-cubes brand-icon"></i> -->
+        </div>
+        <div class="logo-text" *ngIf="isExpanded">
+          <span class="brand-name">RETAILIT</span>
+          <span class="brand-tagline">Smart ERP</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Navigation Menu -->
+    <mat-nav-list class="nav-list">
+      <a
+        mat-list-item
+        *ngFor="let item of menuItems"
+        [routerLink]="item.route"
+        routerLinkActive="active"
+        [routerLinkActiveOptions]="{ exact: item.route === '/dashboard' }"
+        class="nav-item"
+        [matTooltip]="!isExpanded ? item.label : ''"
+        matTooltipPosition="right"
+      >
+        <!-- FontAwesome Icon -->
+        <i class="fa-solid" [ngClass]="item.icon"></i>
+        <span class="nav-label" *ngIf="isExpanded">
+          {{ item.label }}
+        </span>
+
+        <span class="nav-badge" *ngIf="isExpanded && item.badge">
+          {{ item.badge }}
+        </span>
+      </a>
+    </mat-nav-list>
+
+    <!-- Toggle Button -->
+    <div class="toggle-button-wrapper">
+      <button
+        mat-icon-button
+        (click)="toggleSidebar()"
+        class="toggle-button"
+        [matTooltip]="isExpanded ? 'Collapse sidebar' : 'Expand sidebar'"
+        matTooltipPosition="right"
+      >
+        <i
+          class="fa-solid"
+          [ngClass]="isExpanded ? 'fa-chevron-left' : 'fa-chevron-right'"
+        ></i>
+      </button>
+    </div>
+  </mat-sidenav>
+
+  <mat-sidenav-content class="main-content">
+    <ng-content></ng-content>
+  </mat-sidenav-content>
+</mat-sidenav-container>

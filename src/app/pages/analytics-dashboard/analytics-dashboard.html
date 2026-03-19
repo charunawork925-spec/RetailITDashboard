@@ -1,0 +1,472 @@
+<app-sidebar>
+  <div class="industrial-dashboard light-theme">
+    <!-- Header Section -->
+    <header class="dashboard-header">
+      <div class="header-content">
+        <div class="header-left">
+          <h1 class="dashboard-title">
+            <mat-icon>dashboard</mat-icon>
+            Industrial ERP Analytics
+          </h1>
+          <p class="dashboard-subtitle">
+            Category-based Business Intelligence Dashboard
+          </p>
+        </div>
+
+        <div class="header-right">
+          <div class="time-controls">
+            <button
+              mat-stroked-button
+              [class.active]="selectedTimeFrame === 'today'"
+              (click)="onTimeFrameChange('today')"
+            >
+              Today
+            </button>
+            <button
+              mat-stroked-button
+              [class.active]="selectedTimeFrame === 'week'"
+              (click)="onTimeFrameChange('week')"
+            >
+              Week
+            </button>
+            <button
+              mat-stroked-button
+              [class.active]="selectedTimeFrame === 'month'"
+              (click)="onTimeFrameChange('month')"
+            >
+              Month
+            </button>
+            <button
+              mat-stroked-button
+              [class.active]="selectedTimeFrame === 'quarter'"
+              (click)="onTimeFrameChange('quarter')"
+            >
+              Quarter
+            </button>
+            <button
+              mat-stroked-button
+              [class.active]="selectedTimeFrame === 'year'"
+              (click)="onTimeFrameChange('year')"
+            >
+              Year
+            </button>
+          </div>
+
+          <div class="header-actions">
+            <button
+              mat-icon-button
+              matTooltip="Refresh Data"
+              (click)="refreshDashboardData()"
+            >
+              <mat-icon>refresh</mat-icon>
+            </button>
+            <button
+              mat-icon-button
+              matTooltip="Export Dashboard"
+              (click)="exportDashboard()"
+            >
+              <mat-icon>download</mat-icon>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Date Range Display -->
+      <div class="date-range-display">
+        <mat-icon>calendar_today</mat-icon>
+        <span
+          >{{ dateRange.start | date: "MMM d, y" }} -
+          {{ dateRange.end | date: "MMM d, y" }}</span
+        >
+        <mat-chip class="live-chip">
+          <mat-icon class="live-icon">fiber_manual_record</mat-icon>
+          LIVE
+        </mat-chip>
+      </div>
+    </header>
+
+    <!-- Compact Control Panel -->
+    <section class="control-panel">
+      <mat-expansion-panel
+        [expanded]="controlPanelExpanded"
+        (expandedChange)="controlPanelExpanded = $event"
+      >
+        <mat-expansion-panel-header>
+          <mat-panel-title>
+            <mat-icon>tune</mat-icon>
+            <span>Controls</span>
+            <mat-chip class="count-chip"
+              >{{ selectedCategories.length }} categories</mat-chip
+            >
+            <mat-chip class="count-chip"
+              >{{ activeWidgets.length }} active widgets</mat-chip
+            >
+          </mat-panel-title>
+        </mat-expansion-panel-header>
+
+        <!-- Category Quick Selection -->
+        <div class="category-quick-select">
+          <div class="quick-select-header">
+            <h3><mat-icon>category</mat-icon> Categories</h3>
+            <div class="quick-actions">
+              <button
+                mat-button
+                (click)="selectAllWidgets()"
+                class="compact-btn"
+              >
+                <mat-icon>select_all</mat-icon>
+                All
+              </button>
+              <button
+                mat-button
+                (click)="deselectAllWidgets()"
+                class="compact-btn"
+              >
+                <mat-icon>deselect</mat-icon>
+                Clear
+              </button>
+            </div>
+          </div>
+
+          <div class="categories-chips">
+            <mat-chip-listbox [multiple]="true" aria-label="Category selection">
+              <mat-chip-option
+                *ngFor="let category of categories"
+                [selected]="selectedCategories.includes(category.id)"
+                (click)="toggleCategory(category.id)"
+                [style.--chip-color]="category.color"
+                class="category-chip-option"
+              >
+                <mat-icon [style.color]="category.color">{{
+                  category.icon
+                }}</mat-icon>
+                {{ category.name }}
+                <span class="chip-badge"
+                  >{{ getActiveWidgetsCount(category.id) }}/{{
+                    getWidgetsCount(category.id)
+                  }}</span
+                >
+              </mat-chip-option>
+            </mat-chip-listbox>
+          </div>
+
+          <!-- Available Widgets Compact List -->
+          <div class="widgets-compact-list" *ngIf="filteredWidgets.length > 0">
+            <div class="compact-list-header">
+              <h3>
+                <mat-icon>widgets</mat-icon> Available Widgets ({{
+                  filteredWidgets.length
+                }})
+              </h3>
+              <small>{{
+                selectedCategories.length > 0
+                  ? selectedCategories.join(", ")
+                  : "All Categories"
+              }}</small>
+            </div>
+
+            <div class="widgets-grid-compact">
+              <div
+                *ngFor="let widget of filteredWidgets"
+                class="widget-compact-item"
+                [class.selected]="widget.selected"
+                [style.border-color]="getCategoryColor(widget.category)"
+                (click)="toggleWidgetSelection(widget)"
+              >
+                <mat-checkbox
+                  [checked]="widget.selected"
+                  (click)="$event.stopPropagation()"
+                  (change)="toggleWidgetSelection(widget)"
+                  class="widget-checkbox"
+                >
+                </mat-checkbox>
+                <mat-icon
+                  [style.color]="getCategoryColor(widget.category)"
+                  class="widget-icon"
+                >
+                  {{ getWidgetIcon(widget.type) }}
+                </mat-icon>
+                <div class="widget-info">
+                  <span class="widget-name">{{ widget.title }}</span>
+                  <span class="widget-meta"
+                    >{{ widget.category }} • {{ widget.subTopic }}</span
+                  >
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </mat-expansion-panel>
+    </section>
+
+    <!-- KPI Summary Section -->
+    <section class="kpi-section">
+      <div class="section-header">
+        <h2><mat-icon>assessment</mat-icon> Key Performance Indicators</h2>
+      </div>
+
+      <div class="kpi-grid">
+        <div *ngFor="let kpi of kpis" class="kpi-card" [class]="kpi.status">
+          <div class="kpi-card-header">
+            <div class="kpi-title">{{ kpi.name }}</div>
+            <div class="kpi-trend" [class]="kpi.trend">
+              <mat-icon>{{
+                kpi.trend === "up"
+                  ? "trending_up"
+                  : kpi.trend === "down"
+                    ? "trending_down"
+                    : "trending_flat"
+              }}</mat-icon>
+              {{ kpi.changePercentage | number: "1.1-1" }}%
+            </div>
+          </div>
+
+          <div class="kpi-value">
+            <span class="value"
+              >{{ kpi.unit === "$" ? kpi.unit : ""
+              }}{{ kpi.value | number: "1.0-0"
+              }}{{ kpi.unit !== "$" ? kpi.unit : "" }}</span
+            >
+          </div>
+
+          <div class="kpi-progress">
+            <mat-progress-bar
+              mode="determinate"
+              [value]="(kpi.value / kpi.target) * 100"
+              [color]="kpi.color"
+            >
+            </mat-progress-bar>
+            <div class="kpi-target">
+              Target: {{ kpi.unit === "$" ? kpi.unit : ""
+              }}{{ kpi.target | number: "1.0-0"
+              }}{{ kpi.unit !== "$" ? kpi.unit : "" }}
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Main Dashboard Grid -->
+    <section class="dashboard-main">
+      <div class="widgets-controls">
+        <h2>
+          <mat-icon>widgets</mat-icon>
+          Dashboard
+          <span class="active-count">({{ activeWidgets.length }} widgets)</span>
+        </h2>
+        <button
+          mat-stroked-button
+          (click)="controlPanelExpanded = !controlPanelExpanded"
+          class="toggle-controls"
+        >
+          <mat-icon>{{
+            controlPanelExpanded ? "expand_less" : "expand_more"
+          }}</mat-icon>
+          {{ controlPanelExpanded ? "Hide" : "Show" }} Controls
+        </button>
+      </div>
+
+      <div class="widgets-grid-container">
+        <div
+          class="widgets-grid"
+          cdkDropList
+          [cdkDropListData]="activeWidgets"
+          (cdkDropListDropped)="onWidgetDrop($event)"
+          id="widgetsGrid"
+        >
+          <!-- Dynamic Widgets -->
+          <div
+            *ngFor="let widget of activeWidgets"
+            [ngStyle]="{
+              'grid-column': 'span ' + widget.position.cols,
+              'grid-row': 'span ' + widget.position.rows,
+            }"
+            class="widget"
+            cdkDrag
+          >
+            <div
+              class="widget-header"
+              [style.border-left-color]="getCategoryColor(widget.category)"
+            >
+              <div class="widget-title">
+                <mat-icon [style.color]="getCategoryColor(widget.category)">
+                  {{ getWidgetIcon(widget.type) }}
+                </mat-icon>
+                <h3>{{ widget.title }}</h3>
+                <mat-chip
+                  class="category-chip"
+                  [style.background]="getCategoryColor(widget.category)"
+                >
+                  {{ widget.subTopic }}
+                </mat-chip>
+              </div>
+
+              <div class="widget-actions">
+                <button
+                  mat-icon-button
+                  (click)="toggleWidgetSelection(widget)"
+                  matTooltip="Remove"
+                >
+                  <mat-icon>close</mat-icon>
+                </button>
+                <span class="last-updated" matTooltip="Last Updated">
+                  {{ widget.lastUpdated | date: "HH:mm" }}
+                </span>
+              </div>
+            </div>
+
+            <div class="widget-content">
+              <!-- Customer Growth Chart -->
+              <ng-container *ngIf="widget.id === 'customer-growth'">
+                <div class="chart-container">
+                  <canvas
+                    baseChart
+                    [data]="customerGrowthChart.data!"
+                    [options]="customerGrowthChart.options"
+                    [type]="customerGrowthChart.type"
+                  >
+                  </canvas>
+                </div>
+              </ng-container>
+
+              <!-- Top Customers Chart -->
+              <ng-container *ngIf="widget.id === 'top-customers'">
+                <div class="chart-container">
+                  <canvas
+                    baseChart
+                    [data]="topCustomersChart.data!"
+                    [options]="topCustomersChart.options"
+                    [type]="topCustomersChart.type"
+                  >
+                  </canvas>
+                </div>
+              </ng-container>
+
+              <!-- Inventory Turnover Chart -->
+              <ng-container *ngIf="widget.id === 'inventory-turnover'">
+                <div class="chart-container">
+                  <canvas
+                    baseChart
+                    [data]="inventoryTurnoverChart.data!"
+                    [options]="inventoryTurnoverChart.options"
+                    [type]="inventoryTurnoverChart.type"
+                  >
+                  </canvas>
+                </div>
+              </ng-container>
+
+              <!-- Stock Levels Chart -->
+              <ng-container *ngIf="widget.id === 'stock-levels'">
+                <div class="chart-container">
+                  <canvas
+                    baseChart
+                    [data]="stockLevelChart.data!"
+                    [options]="stockLevelChart.options"
+                    [type]="stockLevelChart.type"
+                  >
+                  </canvas>
+                </div>
+              </ng-container>
+
+              <!-- Sales Performance Chart -->
+              <ng-container *ngIf="widget.id === 'sales-performance'">
+                <div class="chart-container">
+                  <canvas
+                    baseChart
+                    [data]="salesPerformanceChart.data!"
+                    [options]="salesPerformanceChart.options"
+                    [type]="salesPerformanceChart.type"
+                  >
+                  </canvas>
+                </div>
+              </ng-container>
+
+              <!-- Profitability Chart -->
+              <ng-container *ngIf="widget.id === 'profit-margin'">
+                <div class="chart-container">
+                  <canvas
+                    baseChart
+                    [data]="profitabilityChart.data!"
+                    [options]="profitabilityChart.options"
+                    [type]="profitabilityChart.type"
+                  >
+                  </canvas>
+                </div>
+              </ng-container>
+
+              <!-- Wastage Chart -->
+              <ng-container *ngIf="widget.id === 'wastage-analysis'">
+                <div class="chart-container">
+                  <canvas
+                    baseChart
+                    [data]="wastageChart.data!"
+                    [options]="wastageChart.options"
+                    [type]="wastageChart.type"
+                  >
+                  </canvas>
+                </div>
+              </ng-container>
+
+              <!-- Promotion Performance Chart -->
+              <ng-container *ngIf="widget.id === 'promotion-performance'">
+                <div class="chart-container">
+                  <canvas
+                    baseChart
+                    [data]="promotionPerformanceChart.data!"
+                    [options]="promotionPerformanceChart.options"
+                    [type]="promotionPerformanceChart.type"
+                  >
+                  </canvas>
+                </div>
+              </ng-container>
+
+              <!-- Metric Widgets -->
+              <ng-container *ngIf="widget.type === 'metric'">
+                <div class="metric-widget">
+                  <div
+                    class="metric-value"
+                    [style.color]="getCategoryColor(widget.category)"
+                  >
+                    {{ widget.config.value | number: "1.0-0"
+                    }}{{ widget.config.unit }}
+                  </div>
+                  <div class="metric-change" [class]="widget.config.trend">
+                    <mat-icon>
+                      {{
+                        widget.config.trend === "up"
+                          ? "trending_up"
+                          : "trending_down"
+                      }}
+                    </mat-icon>
+                    {{ widget.config.change }}%
+                  </div>
+                  <div class="metric-label">{{ widget.title }}</div>
+                </div>
+              </ng-container>
+
+              <!-- Gauge Widgets -->
+              <ng-container *ngIf="widget.type === 'gauge'">
+                <div class="gauge-widget">
+                  <ngx-gauge
+                    type="full"
+                    [value]="widget.config.value"
+                    [label]="widget.title"
+                    [append]="widget.config.unit"
+                    [min]="widget.config.min"
+                    [max]="widget.config.max"
+                    [thresholds]="{
+                      '0': { color: '#f44336' },
+                      '50': { color: '#ff9800' },
+                      '75': { color: '#4caf50' },
+                    }"
+                  >
+                  </ngx-gauge>
+                </div>
+              </ng-container>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+</app-sidebar>
