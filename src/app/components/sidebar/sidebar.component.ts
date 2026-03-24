@@ -49,9 +49,9 @@ export class SidebarComponent {
     { label: 'Reports', icon: 'fa-chart-bar', route: '/reports' },
     { label: 'Branches and Devices', icon: 'fa-store', route: '/branches' },
     {
-      label: 'Custom Main',
+      label: 'Custom Builder',
       icon: 'fa-user-shield',
-      route: '/custommain',
+      route: '/builder',
     },
     { label: 'Insights', icon: 'fa-lightbulb', route: '/insights' },
     { label: 'Analytics', icon: 'fa-chart-line', route: '/analytics' },
