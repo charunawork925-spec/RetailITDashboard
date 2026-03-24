@@ -1,0 +1,77 @@
+<div class="presets-page">
+  <div class="presets-header">
+    <div>
+      <h1 class="presets-title">Report Presets</h1>
+      <p class="presets-sub">
+        Pre-built intelligent reports — click any to open in Builder
+      </p>
+    </div>
+    <div class="presets-count">{{ presets.length }} reports available</div>
+  </div>
+
+  @if (loading) {
+    <div style="display: flex; justify-content: center; padding: 60px">
+      <div class="spinner"></div>
+    </div>
+  }
+
+  @if (!loading) {
+    <div class="presets-grid">
+      @for (p of presets; track p.id) {
+        <div class="preset-card" (click)="openInBuilder(p)">
+          <!-- THUMB -->
+          <div class="preset-thumb" [style.background]="getThumb(p)">
+            <div class="preset-icon">{{ p.icon }}</div>
+            <div class="preset-widget-count">
+              <span class="widget-pill"
+                >{{ p.widgets.length }} widget{{
+                  p.widgets.length > 1 ? "s" : ""
+                }}</span
+              >
+            </div>
+          </div>
+
+          <!-- INFO -->
+          <div class="preset-info">
+            <div class="preset-name">{{ p.name }}</div>
+            <div class="preset-desc">{{ p.description }}</div>
+
+            <!-- WIDGETS PREVIEW -->
+            <div class="preset-widgets-preview">
+              @for (w of p.widgets; track $index) {
+                <span class="w-preview-chip">
+                  {{
+                    w.type === "bar"
+                      ? "📊"
+                      : w.type === "line"
+                        ? "📈"
+                        : w.type === "pie"
+                          ? "🥧"
+                          : w.type === "kpi"
+                            ? "🔢"
+                            : "📋"
+                  }}
+                  {{ w.title }}
+                </span>
+              }
+            </div>
+
+            <!-- TAGS -->
+            <div class="preset-tags">
+              @for (t of p.tags; track t) {
+                <span class="ptag">{{ t }}</span>
+              }
+            </div>
+          </div>
+
+          <!-- OPEN BUTTON -->
+          <div class="preset-footer">
+            <button class="open-btn" [style.background]="getAccent(p)">
+              ⚡ Open in Builder
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>

@@ -48,7 +48,11 @@ export class SidebarComponent {
     { label: 'Customers', icon: 'fa-users', route: '/customers' },
     { label: 'Reports', icon: 'fa-chart-bar', route: '/reports' },
     { label: 'Branches and Devices', icon: 'fa-store', route: '/branches' },
-    { label: 'Users and Security', icon: 'fa-user-shield', route: '/users' },
+    {
+      label: 'Custom Main',
+      icon: 'fa-user-shield',
+      route: '/custommain',
+    },
     { label: 'Insights', icon: 'fa-lightbulb', route: '/insights' },
     { label: 'Analytics', icon: 'fa-chart-line', route: '/analytics' },
     { label: 'Settings', icon: 'fa-cog', route: '/settings' },

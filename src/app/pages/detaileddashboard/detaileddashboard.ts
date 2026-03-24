@@ -6,6 +6,7 @@ import {
   CompleteAnalytics,
   WidgetTopic,
   TimePeriod,
+  ExtendedAnalytics,
 } from '../../models/analytics';
 import { AnalyticsService } from '../../services/analytics.service';
 import { WidgetService } from '../../services/widget.service';
@@ -134,6 +135,39 @@ export class Detaileddashboard implements OnInit, OnDestroy {
     'Any inventory alerts?',
   ];
 
+  //chat category selection
+  selectedTopics: string[] = [];
+  showTopicSelector = false;
+  pendingQuestion = '';
+  availableTopics = [
+    { key: 'sales', label: 'Sales', icon: 'trending_up', color: '#6366f1' },
+    { key: 'customer', label: 'Customer', icon: 'people', color: '#3b82f6' },
+    {
+      key: 'inventory',
+      label: 'Inventory',
+      icon: 'inventory_2',
+      color: '#0ea5e9',
+    },
+    {
+      key: 'promotions',
+      label: 'Promotions',
+      icon: 'local_offer',
+      color: '#10b981',
+    },
+    {
+      key: 'profitability',
+      label: 'Profitability',
+      icon: 'account_balance',
+      color: '#8b5cf6',
+    },
+    {
+      key: 'wastage',
+      label: 'Wastage',
+      icon: 'delete_sweep',
+      color: '#f59e0b',
+    },
+  ];
+
   constructor(
     public widgetService: WidgetService,
     private analyticsService: AnalyticsService,
@@ -242,35 +276,161 @@ export class Detaileddashboard implements OnInit, OnDestroy {
     const question = this.chatInput.trim();
     if (!question || this.chatLoading) return;
 
+    // Store the question and show topic selector
+    this.pendingQuestion = question;
+    this.showTopicSelector = true;
+    this.selectedTopics = [];
+  }
+
+  // New method to handle topic selection and sending
+  sendWithSelectedTopics() {
+    if (this.selectedTopics.length === 0) {
+      // Optional: Show warning that at least one topic should be selected
+      return;
+    }
+
+    // Add user message to chat
     this.chatMessages.push({
       role: 'user',
-      content: question,
+      content: this.pendingQuestion,
       time: new Date(),
     });
+
     this.chatInput = '';
     this.chatLoading = true;
+    this.showTopicSelector = false;
 
+    // Filter data based on selected topics
     this.analyticsService.getCompleteAnalytics().subscribe((data) => {
-      this.analyticsService.askAI(question, data).subscribe({
-        next: (res) => {
-          this.chatMessages.push({
-            role: 'ai',
-            content: res.answer,
-            time: new Date(),
-          });
-          this.chatLoading = false;
-        },
-        error: () => {
-          this.chatMessages.push({
-            role: 'ai',
-            content: "Sorry, I couldn't process that. Please try again.",
-            time: new Date(),
-          });
-          this.chatLoading = false;
-        },
-      });
+      const filteredData = this.filterAnalyticsByTopics(
+        data,
+        this.selectedTopics,
+      );
+
+      this.analyticsService
+        .askAI(this.pendingQuestion, filteredData)
+        .subscribe({
+          next: (res) => {
+            this.chatMessages.push({
+              role: 'ai',
+              content: res.answer,
+              time: new Date(),
+            });
+            this.chatLoading = false;
+            this.pendingQuestion = '';
+            this.selectedTopics = [];
+          },
+          error: () => {
+            this.chatMessages.push({
+              role: 'ai',
+              content: "Sorry, I couldn't process that. Please try again.",
+              time: new Date(),
+            });
+            this.chatLoading = false;
+          },
+        });
     });
   }
+
+  // New method to filter analytics data by selected topics
+  private filterAnalyticsByTopics(
+    analytics: ExtendedAnalytics,
+    topics: string[],
+  ): any {
+    const filtered: any = {};
+
+    topics.forEach((topic) => {
+      switch (topic) {
+        case 'sales':
+          filtered.sales = {
+            dashboard: analytics.dashboard.metrics,
+            salesTrend: analytics.dashboard.salesTrend,
+            topProducts: analytics.dashboard.topProducts,
+            branches: analytics.dashboard.branches,
+            paymentMethods: analytics.dashboard.paymentMethods,
+          };
+          break;
+        case 'customer':
+          filtered.customer = analytics.customerData;
+          break;
+        case 'inventory':
+          filtered.inventory = {
+            inventoryAlerts: analytics.dashboard.inventoryAlerts,
+            topBrands: analytics.dashboard.topBrands,
+            stockLevels: analytics.insights.bestSellingProducts,
+          };
+          break;
+        case 'promotions':
+          filtered.promotions = analytics.promotionData;
+          break;
+        case 'profitability':
+          filtered.profitability = analytics.insights.profitability;
+          break;
+        case 'wastage':
+          filtered.wastage = analytics.wastageData;
+          break;
+      }
+    });
+
+    // Include basic metadata
+    filtered.metadata = {
+      period: this.selectedPeriod,
+      timestamp: new Date().toISOString(),
+    };
+
+    return filtered;
+  }
+
+  // Cancel topic selection
+  cancelTopicSelection() {
+    this.showTopicSelector = false;
+    this.pendingQuestion = '';
+    this.selectedTopics = [];
+  }
+
+  // Toggle topic selection
+  toggleTopicSelection(topicKey: string) {
+    const index = this.selectedTopics.indexOf(topicKey);
+    if (index === -1) {
+      this.selectedTopics.push(topicKey);
+    } else {
+      this.selectedTopics.splice(index, 1);
+    }
+  }
+
+  // sendChat() {
+  //   const question = this.chatInput.trim();
+  //   if (!question || this.chatLoading) return;
+
+  //   this.chatMessages.push({
+  //     role: 'user',
+  //     content: question,
+  //     time: new Date(),
+  //   });
+  //   this.chatInput = '';
+  //   this.chatLoading = true;
+
+  //   this.analyticsService.getCompleteAnalytics().subscribe((data) => {
+  //     this.analyticsService.askAI(question, data).subscribe({
+  //       next: (res) => {
+  //         this.chatMessages.push({
+  //           role: 'ai',
+  //           content: res.answer,
+  //           time: new Date(),
+  //         });
+  //         this.chatLoading = false;
+  //       },
+  //       error: () => {
+  //         this.chatMessages.push({
+  //           role: 'ai',
+  //           content: "Sorry, I couldn't process that. Please try again.",
+  //           time: new Date(),
+  //         });
+  //         this.chatLoading = false;
+  //       },
+  //     });
+  //   });
+  // }
 
   // Update the period selector in your template
   changePeriod(period: TimePeriod) {

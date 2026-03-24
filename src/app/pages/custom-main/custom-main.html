@@ -1,0 +1,96 @@
+<div class="shell">
+  <!-- Header -->
+  <header class="topbar">
+    <div class="logo">
+      <div class="logo-icon">
+        <i class="fa-solid fa-chart-column"></i>
+      </div>
+      <div class="logo-text">
+        <span class="logo-name">InsightIQ</span>
+        <span class="logo-sub">Retail Intelligence</span>
+      </div>
+    </div>
+
+    <div class="topbar-right">
+      <span class="live-pill">
+        <span class="live-dot"></span>
+        Live
+      </span>
+      <button class="icon-btn" title="Export">
+        <i class="fa-solid fa-arrow-up-from-bracket"></i>
+      </button>
+      <button class="save-btn">
+        <i class="fa-solid fa-floppy-disk"></i>
+        Save
+      </button>
+    </div>
+  </header>
+
+  <!-- Main centered content -->
+  <main class="main">
+    <div class="hero">
+      <p class="hero-eyebrow">Where would you like to go?</p>
+      <h1 class="hero-title">Choose your workspace</h1>
+      <p class="hero-sub">
+        Select a view below to get started. You can switch anytime from the top
+        nav.
+      </p>
+    </div>
+
+    <!-- Cards -->
+    <div class="card-grid">
+      <button
+        *ngFor="let item of navItems; let i = index"
+        class="nav-card"
+        [class.active]="activeId === item.id"
+        [style.animation-delay]="i * 80 + 'ms'"
+        (click)="navigate(item)"
+        (mouseenter)="select(item)"
+        [attr.aria-pressed]="activeId === item.id"
+      >
+        <!-- Tag badge -->
+        <span
+          *ngIf="item.tag"
+          class="card-tag"
+          [class.tag-live]="item.tag === 'Live'"
+          [class.tag-new]="item.tag === 'New'"
+        >
+          <span *ngIf="item.tag === 'Live'" class="tag-dot"></span>
+          {{ item.tag }}
+        </span>
+
+        <!-- Icon -->
+        <div class="card-icon-wrap">
+          <i class="fa-solid {{ item.icon }}"></i>
+        </div>
+
+        <!-- Text -->
+        <div class="card-body">
+          <span class="card-label">{{ item.label }}</span>
+          <span class="card-desc">{{ item.description }}</span>
+        </div>
+
+        <!-- Footer -->
+        <div class="card-footer">
+          <span class="card-stats">
+            <i class="fa-regular fa-circle-dot"></i>
+            {{ item.stats }}
+          </span>
+          <span class="card-arrow">
+            <i class="fa-solid fa-arrow-right"></i>
+          </span>
+        </div>
+
+        <!-- Active indicator bar -->
+        <div class="active-bar"></div>
+      </button>
+    </div>
+
+    <!-- Active hint -->
+    <p class="hint">
+      <i class="fa-regular fa-lightbulb"></i>
+      Navigating to
+      <strong>{{ activeItem.label }}</strong> — click a card to open
+    </p>
+  </main>
+</div>

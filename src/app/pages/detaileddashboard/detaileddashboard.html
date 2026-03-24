@@ -15,7 +15,7 @@
         </div>
         <div class="top-bar-right">
           <div class="period-selector">
-            <button
+            <!-- <button
               class="period-btn"
               [class.active]="selectedPeriod === 'today'"
               (click)="changePeriod('today')"
@@ -42,7 +42,7 @@
               (click)="changePeriod('year')"
             >
               Year
-            </button>
+            </button> -->
           </div>
           <button
             class="customize-btn"
@@ -319,6 +319,132 @@
       </div>
 
       <div class="chat-messages" #chatScroll>
+        <!-- Topic Selector Modal - Now properly positioned -->
+        <div class="topic-selector-overlay" *ngIf="showTopicSelector">
+          <div class="topic-selector-modal">
+            <div class="topic-selector-header">
+              <h3>Select Relevant Categories</h3>
+              <p>Which areas does your question relate to?</p>
+            </div>
+
+            <div class="topic-selector-options">
+              <button
+                *ngFor="let topic of availableTopics"
+                class="topic-selector-btn"
+                [class.selected]="selectedTopics.includes(topic.key)"
+                [style.--topic-color]="topic.color"
+                (click)="toggleTopicSelection(topic.key)"
+              >
+                <span class="material-icons">{{ topic.icon }}</span>
+                <span>{{ topic.label }}</span>
+              </button>
+            </div>
+
+            <div class="topic-selector-actions">
+              <button class="cancel-btn" (click)="cancelTopicSelection()">
+                Cancel
+              </button>
+              <button
+                class="send-topic-btn"
+                (click)="sendWithSelectedTopics()"
+                [disabled]="selectedTopics.length === 0"
+              >
+                Send Question ({{ selectedTopics.length }} selected)
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Existing chat welcome message -->
+        <div
+          class="chat-welcome"
+          *ngIf="chatMessages.length === 0 && !showTopicSelector"
+        >
+          <span class="material-icons welcome-icon">insights</span>
+          <p>
+            Ask anything about your store's performance, products, customers, or
+            trends.
+          </p>
+          <div class="quick-prompts">
+            <button
+              class="quick-prompt-btn"
+              *ngFor="let q of quickPrompts"
+              (click)="sendQuickPrompt(q)"
+            >
+              {{ q }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Existing chat messages -->
+        <div
+          *ngFor="let msg of chatMessages"
+          class="chat-message"
+          [class.user]="msg.role === 'user'"
+          [class.ai]="msg.role === 'ai'"
+        >
+          <div class="msg-avatar" *ngIf="msg.role === 'ai'">
+            <span class="material-icons">auto_awesome</span>
+          </div>
+          <div class="msg-bubble">
+            <p>{{ msg.content }}</p>
+            <span class="msg-time">{{ msg.time | date: "h:mm a" }}</span>
+          </div>
+        </div>
+
+        <!-- Typing indicator -->
+        <div
+          class="chat-message ai typing"
+          *ngIf="chatLoading && !showTopicSelector"
+        >
+          <div class="msg-avatar">
+            <span class="material-icons">auto_awesome</span>
+          </div>
+          <div class="msg-bubble">
+            <div class="typing-dots">
+              <span></span><span></span><span></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="chat-input-area" *ngIf="!showTopicSelector">
+        <textarea
+          class="chat-input"
+          [(ngModel)]="chatInput"
+          placeholder="Ask about sales, inventory, customers..."
+          rows="1"
+          (keydown.enter)="$event.preventDefault(); sendChat()"
+          (input)="autoResize($event)"
+        ></textarea>
+        <button
+          class="send-btn"
+          (click)="sendChat()"
+          [disabled]="!chatInput.trim() || chatLoading"
+        >
+          <span class="material-icons">{{
+            chatLoading ? "hourglass_top" : "send"
+          }}</span>
+        </button>
+      </div>
+    </aside>
+    <!-- <aside class="ai-chat-panel" [class.open]="showChat">
+      <div class="chat-header">
+        <div class="chat-header-left">
+          <div class="chat-avatar-pulse">
+            <span class="material-icons">auto_awesome</span>
+          </div>
+          <div>
+            <h2>Ask RetailIQ</h2>
+            <span class="chat-status">AI Analytics Assistant</span>
+          </div>
+        </div>
+        <button class="close-btn" (click)="showChat = false">
+          <span class="material-icons">close</span>
+        </button>
+      </div>
+
+      <div class="chat-messages" #chatScroll>
         <div class="chat-welcome" *ngIf="chatMessages.length === 0">
           <span class="material-icons welcome-icon">insights</span>
           <p>
@@ -382,7 +508,7 @@
           }}</span>
         </button>
       </div>
-    </aside>
+    </aside> -->
 
     <!-- Chat Toggle FAB -->
     <button

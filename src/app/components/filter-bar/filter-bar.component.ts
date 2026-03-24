@@ -16,255 +16,344 @@ import { AnalyticsService } from '../../services/analytics.service';
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-    <div class="filter-bar">
-      <!-- Quick Date Presets -->
-      <div class="filter-group">
-        <span class="filter-label">Period:</span>
-        <div class="date-presets">
-          <button
-            *ngFor="let preset of datePresets"
-            class="preset-btn"
-            [class.active]="filterState.dateRange.preset === preset.value"
-            (click)="setDatePreset(preset.value)"
+    <div class="filter-bar-container">
+      <!-- Date & Time Section -->
+      <div class="filter-section">
+        <div class="section-header">
+          <span class="section-icon">📅</span>
+          <span class="section-title">Date & Time</span>
+        </div>
+        <div class="section-content">
+          <!-- Quick Date Presets -->
+          <div class="filter-group">
+            <span class="filter-label">Period:</span>
+            <div class="date-presets">
+              <button
+                *ngFor="let preset of datePresets"
+                class="preset-btn"
+                [class.active]="filterState.dateRange.preset === preset.value"
+                (click)="setDatePreset(preset.value)"
+              >
+                {{ preset.label }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Custom Date Range -->
+          <div
+            class="filter-group"
+            *ngIf="filterState.dateRange.preset === 'custom'"
           >
-            {{ preset.label }}
-          </button>
+            <input
+              type="date"
+              class="date-input"
+              [ngModel]="filterState.dateRange.start | date: 'yyyy-MM-dd'"
+              (ngModelChange)="updateCustomDate('start', $event)"
+            />
+            <span class="date-sep">to</span>
+            <input
+              type="date"
+              class="date-input"
+              [ngModel]="filterState.dateRange.end | date: 'yyyy-MM-dd'"
+              (ngModelChange)="updateCustomDate('end', $event)"
+            />
+          </div>
+
+          <!-- Comparison Type -->
+          <div class="filter-group">
+            <span class="filter-label">Compare:</span>
+            <select
+              class="filter-select"
+              [ngModel]="filterState.comparison"
+              (ngModelChange)="updateFilter('comparison', $event)"
+            >
+              <option *ngFor="let opt of comparisonOptions" [value]="opt.value">
+                {{ opt.label }}
+              </option>
+            </select>
+          </div>
+
+          <!-- Time of Day Filter -->
+          <div class="filter-group">
+            <span class="filter-label">Time:</span>
+            <select
+              class="filter-select"
+              [ngModel]="filterState.timeOfDay"
+              (ngModelChange)="updateFilter('timeOfDay', $event)"
+            >
+              <option *ngFor="let opt of timeOfDayOptions" [value]="opt.value">
+                {{ opt.label }}
+              </option>
+            </select>
+          </div>
+
+          <!-- Day of Week Filter -->
+          <div class="filter-group">
+            <span class="filter-label">Day:</span>
+            <select
+              class="filter-select"
+              [ngModel]="filterState.dayOfWeek"
+              (ngModelChange)="updateFilter('dayOfWeek', $event)"
+            >
+              <option *ngFor="let opt of dayOfWeekOptions" [value]="opt.value">
+                {{ opt.label }}
+              </option>
+            </select>
+          </div>
         </div>
       </div>
 
-      <!-- Custom Date Range (shown only when 'custom' is selected) -->
-      <div
-        class="filter-group"
-        *ngIf="filterState.dateRange.preset === 'custom'"
-      >
-        <input
-          type="date"
-          class="date-input"
-          [ngModel]="filterState.dateRange.start | date: 'yyyy-MM-dd'"
-          (ngModelChange)="updateCustomDate('start', $event)"
-        />
-        <span class="date-sep">to</span>
-        <input
-          type="date"
-          class="date-input"
-          [ngModel]="filterState.dateRange.end | date: 'yyyy-MM-dd'"
-          (ngModelChange)="updateCustomDate('end', $event)"
-        />
+      <!-- Customer Section -->
+      <div class="filter-section">
+        <div class="section-header">
+          <span class="section-icon">👥</span>
+          <span class="section-title">Customer</span>
+        </div>
+        <div class="section-content">
+          <!-- Individual Customer Filter -->
+          <div class="filter-group">
+            <span class="filter-label">Customer:</span>
+            <select
+              class="filter-select"
+              [ngModel]="filterState.customerId"
+              (ngModelChange)="updateFilter('customerId', $event)"
+            >
+              <option value="all">All Customers</option>
+              <option *ngFor="let c of availableCustomers" [value]="c.name">
+                {{ c.name }}
+                <span *ngIf="c.type"> — {{ c.type }}</span>
+              </option>
+            </select>
+          </div>
+
+          <!-- Customer Type Filter -->
+          <div class="filter-group">
+            <span class="filter-label">Type:</span>
+            <select
+              class="filter-select"
+              [ngModel]="filterState.customerType"
+              (ngModelChange)="updateFilter('customerType', $event)"
+            >
+              <option
+                *ngFor="let opt of customerTypeOptions"
+                [value]="opt.value"
+              >
+                {{ opt.label }}
+              </option>
+            </select>
+          </div>
+        </div>
       </div>
 
-      <!-- Comparison Type -->
-      <div class="filter-group">
-        <span class="filter-label">Compare:</span>
-        <select
-          class="filter-select"
-          [ngModel]="filterState.comparison"
-          (ngModelChange)="updateFilter('comparison', $event)"
+      <!-- Product Section -->
+      <div class="filter-section">
+        <div class="section-header">
+          <span class="section-icon">📦</span>
+          <span class="section-title">Product</span>
+        </div>
+        <div class="section-content">
+          <!-- Product Category Filter -->
+          <div class="filter-group">
+            <span class="filter-label">Category:</span>
+            <select
+              class="filter-select"
+              [ngModel]="filterState.productCategory"
+              (ngModelChange)="updateFilter('productCategory', $event)"
+            >
+              <option
+                *ngFor="let opt of productCategoryOptions"
+                [value]="opt.value"
+              >
+                {{ opt.label }}
+              </option>
+            </select>
+          </div>
+
+          <!-- Inventory Status Filter -->
+          <div class="filter-group">
+            <span class="filter-label">Inventory:</span>
+            <select
+              class="filter-select"
+              [ngModel]="filterState.inventoryStatus"
+              (ngModelChange)="updateFilter('inventoryStatus', $event)"
+            >
+              <option
+                *ngFor="let opt of inventoryStatusOptions"
+                [value]="opt.value"
+              >
+                {{ opt.label }}
+              </option>
+            </select>
+          </div>
+
+          <!-- Wastage Category Filter -->
+          <div class="filter-group">
+            <span class="filter-label">Waste:</span>
+            <select
+              class="filter-select"
+              [ngModel]="filterState.wastageCategory"
+              (ngModelChange)="updateFilter('wastageCategory', $event)"
+            >
+              <option
+                *ngFor="let opt of wastageCategoryOptions"
+                [value]="opt.value"
+              >
+                {{ opt.label }}
+              </option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Location Section -->
+      <div class="filter-section">
+        <div class="section-header">
+          <span class="section-icon">📍</span>
+          <span class="section-title">Location</span>
+        </div>
+        <div class="section-content">
+          <!-- Branch Filter -->
+          <div class="filter-group">
+            <span class="filter-label">Branch:</span>
+            <select
+              class="filter-select"
+              [ngModel]="filterState.branch"
+              (ngModelChange)="updateFilter('branch', $event)"
+            >
+              <option *ngFor="let opt of branchOptions" [value]="opt.value">
+                {{ opt.label }}
+              </option>
+            </select>
+          </div>
+
+          <!-- Store Performance Filter -->
+          <div class="filter-group">
+            <span class="filter-label">Performance:</span>
+            <select
+              class="filter-select"
+              [ngModel]="filterState.storePerformance"
+              (ngModelChange)="updateFilter('storePerformance', $event)"
+            >
+              <option
+                *ngFor="let opt of storePerformanceOptions"
+                [value]="opt.value"
+              >
+                {{ opt.label }}
+              </option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Transaction Section -->
+      <div class="filter-section">
+        <div class="section-header">
+          <span class="section-icon">💳</span>
+          <span class="section-title">Transaction</span>
+        </div>
+        <div class="section-content">
+          <!-- Payment Method Filter -->
+          <div class="filter-group">
+            <span class="filter-label">Payment:</span>
+            <select
+              class="filter-select"
+              [ngModel]="filterState.paymentMethod"
+              (ngModelChange)="updateFilter('paymentMethod', $event)"
+            >
+              <option
+                *ngFor="let opt of paymentMethodOptions"
+                [value]="opt.value"
+              >
+                {{ opt.label }}
+              </option>
+            </select>
+          </div>
+
+          <!-- Promotion Type Filter -->
+          <div class="filter-group">
+            <span class="filter-label">Promo:</span>
+            <select
+              class="filter-select"
+              [ngModel]="filterState.promotionType"
+              (ngModelChange)="updateFilter('promotionType', $event)"
+            >
+              <option
+                *ngFor="let opt of promotionTypeOptions"
+                [value]="opt.value"
+              >
+                {{ opt.label }}
+              </option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Actions Section -->
+      <div class="filter-actions">
+        <button
+          class="reset-btn"
+          (click)="resetFilters()"
+          *ngIf="hasActiveFilters()"
         >
-          <option *ngFor="let opt of comparisonOptions" [value]="opt.value">
-            {{ opt.label }}
-          </option>
-        </select>
-      </div>
+          <span class="material-icons">refresh</span>
+          Reset All Filters
+        </button>
 
-      <!-- Individual Customer Filter (NEW) -->
-      <div class="filter-group" *ngIf="showCustomerFilters">
-        <span class="filter-label">Customer:</span>
-        <select
-          class="filter-select"
-          [ngModel]="filterState.customerId"
-          (ngModelChange)="updateFilter('customerId', $event)"
-        >
-          <option value="all">All Customers</option>
-          <option *ngFor="let c of availableCustomers" [value]="c.name">
-            {{ c.name }}
-            <span *ngIf="c.type"> — {{ c.type }}</span>
-          </option>
-        </select>
-      </div>
-
-      <!-- Customer Type Filter -->
-      <div class="filter-group" *ngIf="showCustomerFilters">
-        <span class="filter-label">Type:</span>
-        <select
-          class="filter-select"
-          [ngModel]="filterState.customerType"
-          (ngModelChange)="updateFilter('customerType', $event)"
-        >
-          <option *ngFor="let opt of customerTypeOptions" [value]="opt.value">
-            {{ opt.label }}
-          </option>
-        </select>
-      </div>
-
-      <!-- Product Category Filter -->
-      <div class="filter-group" *ngIf="showProductFilters">
-        <span class="filter-label">Category:</span>
-        <select
-          class="filter-select"
-          [ngModel]="filterState.productCategory"
-          (ngModelChange)="updateFilter('productCategory', $event)"
-        >
-          <option
-            *ngFor="let opt of productCategoryOptions"
-            [value]="opt.value"
-          >
-            {{ opt.label }}
-          </option>
-        </select>
-      </div>
-
-      <!-- Branch Filter -->
-      <div class="filter-group" *ngIf="showBranchFilters">
-        <span class="filter-label">Branch:</span>
-        <select
-          class="filter-select"
-          [ngModel]="filterState.branch"
-          (ngModelChange)="updateFilter('branch', $event)"
-        >
-          <option *ngFor="let opt of branchOptions" [value]="opt.value">
-            {{ opt.label }}
-          </option>
-        </select>
-      </div>
-
-      <!-- Payment Method Filter -->
-      <div class="filter-group" *ngIf="showPaymentFilters">
-        <span class="filter-label">Payment:</span>
-        <select
-          class="filter-select"
-          [ngModel]="filterState.paymentMethod"
-          (ngModelChange)="updateFilter('paymentMethod', $event)"
-        >
-          <option *ngFor="let opt of paymentMethodOptions" [value]="opt.value">
-            {{ opt.label }}
-          </option>
-        </select>
-      </div>
-
-      <!-- Time of Day Filter -->
-      <div class="filter-group" *ngIf="showTimeFilters">
-        <span class="filter-label">Time:</span>
-        <select
-          class="filter-select"
-          [ngModel]="filterState.timeOfDay"
-          (ngModelChange)="updateFilter('timeOfDay', $event)"
-        >
-          <option *ngFor="let opt of timeOfDayOptions" [value]="opt.value">
-            {{ opt.label }}
-          </option>
-        </select>
-      </div>
-
-      <!-- Day of Week Filter -->
-      <div class="filter-group" *ngIf="showDayFilters">
-        <span class="filter-label">Day:</span>
-        <select
-          class="filter-select"
-          [ngModel]="filterState.dayOfWeek"
-          (ngModelChange)="updateFilter('dayOfWeek', $event)"
-        >
-          <option *ngFor="let opt of dayOfWeekOptions" [value]="opt.value">
-            {{ opt.label }}
-          </option>
-        </select>
-      </div>
-
-      <!-- Promotion Type Filter -->
-      <div class="filter-group" *ngIf="showPromotionFilters">
-        <span class="filter-label">Promo:</span>
-        <select
-          class="filter-select"
-          [ngModel]="filterState.promotionType"
-          (ngModelChange)="updateFilter('promotionType', $event)"
-        >
-          <option *ngFor="let opt of promotionTypeOptions" [value]="opt.value">
-            {{ opt.label }}
-          </option>
-        </select>
-      </div>
-
-      <!-- Store Performance Filter -->
-      <div class="filter-group" *ngIf="showStoreFilters">
-        <span class="filter-label">Performance:</span>
-        <select
-          class="filter-select"
-          [ngModel]="filterState.storePerformance"
-          (ngModelChange)="updateFilter('storePerformance', $event)"
-        >
-          <option
-            *ngFor="let opt of storePerformanceOptions"
-            [value]="opt.value"
-          >
-            {{ opt.label }}
-          </option>
-        </select>
-      </div>
-
-      <!-- Inventory Status Filter -->
-      <div class="filter-group" *ngIf="showInventoryFilters">
-        <span class="filter-label">Status:</span>
-        <select
-          class="filter-select"
-          [ngModel]="filterState.inventoryStatus"
-          (ngModelChange)="updateFilter('inventoryStatus', $event)"
-        >
-          <option
-            *ngFor="let opt of inventoryStatusOptions"
-            [value]="opt.value"
-          >
-            {{ opt.label }}
-          </option>
-        </select>
-      </div>
-
-      <!-- Wastage Category Filter -->
-      <div class="filter-group" *ngIf="showWastageFilters">
-        <span class="filter-label">Waste Category:</span>
-        <select
-          class="filter-select"
-          [ngModel]="filterState.wastageCategory"
-          (ngModelChange)="updateFilter('wastageCategory', $event)"
-        >
-          <option
-            *ngFor="let opt of wastageCategoryOptions"
-            [value]="opt.value"
-          >
-            {{ opt.label }}
-          </option>
-        </select>
-      </div>
-
-      <!-- Reset Button -->
-      <button
-        class="reset-btn"
-        (click)="resetFilters()"
-        *ngIf="hasActiveFilters()"
-      >
-        <span class="material-icons">refresh</span>
-        Reset Filters
-      </button>
-
-      <!-- Active Filters Display -->
-      <div class="active-filters" *ngIf="getActiveFiltersCount() > 0">
-        <span class="filter-badge" *ngFor="let filter of getActiveFilters()">
-          {{ filter }}
-        </span>
+        <!-- Active Filters Display -->
+        <div class="active-filters" *ngIf="getActiveFiltersCount() > 0">
+          <span class="filter-badge" *ngFor="let filter of getActiveFilters()">
+            {{ filter }}
+          </span>
+        </div>
       </div>
     </div>
   `,
   styles: [
     `
-      .filter-bar {
+      .filter-bar-container {
         background: #ffffff;
         border: 1px solid #e2e6f0;
-        border-radius: 12px;
-        padding: 16px;
-        margin-bottom: 20px;
+        border-radius: 16px;
+        margin-bottom: 24px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(99, 102, 241, 0.06);
+      }
+
+      .filter-section {
+        border-bottom: 1px solid #f0f2f8;
+        padding: 16px 20px;
+      }
+
+      .filter-section:last-of-type {
+        border-bottom: none;
+      }
+
+      .section-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 16px;
+        padding-bottom: 8px;
+        border-bottom: 2px solid #eef2ff;
+      }
+
+      .section-icon {
+        font-size: 18px;
+      }
+
+      .section-title {
+        font-size: 14px;
+        font-weight: 700;
+        color: #1f2a4a;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .section-content {
         display: flex;
         flex-wrap: wrap;
-        gap: 16px;
+        gap: 12px;
         align-items: center;
-        box-shadow: 0 2px 8px rgba(99, 102, 241, 0.06);
       }
 
       .filter-group {
@@ -272,9 +361,15 @@ import { AnalyticsService } from '../../services/analytics.service';
         align-items: center;
         gap: 8px;
         background: #f8f9fd;
-        padding: 4px 8px;
+        padding: 4px 12px;
         border-radius: 8px;
         border: 1px solid #e2e6f0;
+        transition: all 0.2s;
+      }
+
+      .filter-group:hover {
+        border-color: #cbd5e1;
+        background: #ffffff;
       }
 
       .filter-label {
@@ -282,15 +377,17 @@ import { AnalyticsService } from '../../services/analytics.service';
         font-weight: 600;
         color: #6b7a99;
         padding: 0 4px;
+        white-space: nowrap;
       }
 
       .date-presets {
         display: flex;
-        gap: 2px;
+        gap: 4px;
+        flex-wrap: wrap;
       }
 
       .preset-btn {
-        padding: 6px 10px;
+        padding: 6px 12px;
         border: none;
         background: transparent;
         border-radius: 6px;
@@ -299,6 +396,7 @@ import { AnalyticsService } from '../../services/analytics.service';
         color: #6b7a99;
         cursor: pointer;
         transition: all 0.2s;
+        white-space: nowrap;
       }
 
       .preset-btn:hover {
@@ -332,17 +430,38 @@ import { AnalyticsService } from '../../services/analytics.service';
         background: white;
         font-size: 12px;
         color: #1a1f2e;
-        min-width: 120px;
+        min-width: 130px;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+
+      .filter-select:hover {
+        border-color: #6366f1;
+      }
+
+      .filter-select:focus {
+        outline: none;
+        border-color: #6366f1;
+        box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.1);
+      }
+
+      .filter-actions {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 20px;
+        background: #fafbff;
+        border-top: 1px solid #eef2ff;
       }
 
       .reset-btn {
         display: flex;
         align-items: center;
-        gap: 4px;
-        padding: 6px 12px;
+        gap: 6px;
+        padding: 8px 16px;
         border: 1px solid #ef4444;
-        background: rgba(239, 68, 68, 0.1);
-        border-radius: 6px;
+        background: rgba(239, 68, 68, 0.05);
+        border-radius: 8px;
         color: #ef4444;
         font-size: 12px;
         font-weight: 600;
@@ -351,7 +470,8 @@ import { AnalyticsService } from '../../services/analytics.service';
       }
 
       .reset-btn:hover {
-        background: rgba(239, 68, 68, 0.2);
+        background: rgba(239, 68, 68, 0.15);
+        transform: translateY(-1px);
       }
 
       .reset-btn .material-icons {
@@ -361,17 +481,73 @@ import { AnalyticsService } from '../../services/analytics.service';
       .active-filters {
         display: flex;
         flex-wrap: wrap;
-        gap: 6px;
-        margin-left: auto;
+        gap: 8px;
+        align-items: center;
       }
 
       .filter-badge {
-        background: #6366f1;
+        background: linear-gradient(135deg, #6366f1, #8b5cf6);
         color: white;
-        padding: 4px 10px;
+        padding: 4px 12px;
         border-radius: 20px;
         font-size: 11px;
         font-weight: 600;
+        letter-spacing: 0.3px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+      }
+
+      /* Responsive Design */
+      @media (max-width: 768px) {
+        .filter-section {
+          padding: 12px 16px;
+        }
+
+        .section-content {
+          gap: 8px;
+        }
+
+        .filter-group {
+          flex-wrap: wrap;
+          padding: 6px 10px;
+        }
+
+        .filter-select {
+          min-width: 100px;
+        }
+
+        .date-presets {
+          gap: 2px;
+        }
+
+        .preset-btn {
+          padding: 4px 8px;
+          font-size: 11px;
+        }
+
+        .filter-actions {
+          flex-direction: column;
+          gap: 12px;
+          align-items: stretch;
+        }
+
+        .active-filters {
+          justify-content: center;
+        }
+      }
+
+      @media (max-width: 480px) {
+        .section-content {
+          flex-direction: column;
+          align-items: stretch;
+        }
+
+        .filter-group {
+          justify-content: space-between;
+        }
+
+        .filter-select {
+          flex: 1;
+        }
       }
     `,
   ],
@@ -380,7 +556,7 @@ export class FilterBarComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
 
   filterState!: FilterState;
-  availableCustomers: any[] = []; // NEW — populated from FilterService
+  availableCustomers: any[] = [];
 
   datePresets: { value: DatePreset; label: string }[] = [
     { value: 'today', label: 'Today' },
@@ -494,20 +670,9 @@ export class FilterBarComponent implements OnInit, OnDestroy {
     { value: 'meat', label: 'Meat' },
   ];
 
-  showCustomerFilters = false;
-  showProductFilters = false;
-  showBranchFilters = false;
-  showPaymentFilters = false;
-  showTimeFilters = false;
-  showDayFilters = false;
-  showPromotionFilters = false;
-  showStoreFilters = false;
-  showInventoryFilters = false;
-  showWastageFilters = false;
-
   constructor(
     private filterService: FilterService,
-    private analyticsService: AnalyticsService, // ADD
+    private analyticsService: AnalyticsService,
   ) {}
 
   ngOnInit() {
@@ -517,14 +682,6 @@ export class FilterBarComponent implements OnInit, OnDestroy {
         this.filterState = state;
       });
 
-    // NEW — subscribe to customer list fed from dashboard after data loads
-    // this.filterService.availableCustomers$
-    //   .pipe(takeUntil(this.destroy$))
-    //   .subscribe((customers) => {
-    //     this.availableCustomers = customers;
-    //   });
-
-    // REPLACE the availableCustomers$ subscription with this
     this.analyticsService
       .getCompleteAnalytics('today')
       .pipe(takeUntil(this.destroy$))
@@ -532,8 +689,6 @@ export class FilterBarComponent implements OnInit, OnDestroy {
         this.availableCustomers = data.dashboard.topCustomers;
         console.log('👥 Customers loaded:', this.availableCustomers);
       });
-
-    this.updateFilterVisibility();
   }
 
   ngOnDestroy() {
@@ -573,7 +728,7 @@ export class FilterBarComponent implements OnInit, OnDestroy {
     const state = this.filterState;
 
     if (state.customerType !== 'all') count++;
-    if (state.customerId !== 'all') count++; // NEW
+    if (state.customerId !== 'all') count++;
     if (state.productCategory !== 'all') count++;
     if (state.branch !== 'all') count++;
     if (state.paymentMethod !== 'all') count++;
@@ -591,7 +746,6 @@ export class FilterBarComponent implements OnInit, OnDestroy {
     const active: string[] = [];
     const state = this.filterState;
 
-    // NEW — show selected individual customer in active badges
     if (state.customerId !== 'all') {
       active.push(`Customer: ${state.customerId}`);
     }
@@ -655,18 +809,5 @@ export class FilterBarComponent implements OnInit, OnDestroy {
     }
 
     return active;
-  }
-
-  private updateFilterVisibility() {
-    this.showCustomerFilters = true;
-    this.showProductFilters = true;
-    this.showBranchFilters = true;
-    this.showPaymentFilters = true;
-    this.showTimeFilters = true;
-    this.showDayFilters = true;
-    this.showPromotionFilters = true;
-    this.showStoreFilters = true;
-    this.showInventoryFilters = true;
-    this.showWastageFilters = true;
   }
 }

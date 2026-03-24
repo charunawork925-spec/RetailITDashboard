@@ -246,7 +246,7 @@ export class SalesTrendWidgetComponent
           const originalData = this.data;
           this.data = customerTrend;
           this.applyFilters(filters);
-          this.data = originalData; // restore so period changes still work
+          //  this.data = originalData; // restore so period changes still work
         });
     } else {
       this.applyFilters(filters);

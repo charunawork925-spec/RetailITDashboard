@@ -1,0 +1,205 @@
+<div class="dashboard">
+  <!-- HEADER -->
+  <div class="dash-header">
+    <div>
+      <h1 class="dash-title">Sales Command Centre</h1>
+      <p class="dash-subtitle">
+        FreshMart Supermarket Group &bull; All Branches &bull; 2024
+      </p>
+    </div>
+    <div class="date-chip">📅 Jan 2024 – Dec 2024</div>
+  </div>
+
+  <!-- LOADING -->
+  @if (loading) {
+    <div class="loading-row"><div class="spinner"></div></div>
+  }
+
+  <!-- KPI CARDS -->
+  @if (!loading) {
+    <div class="kpi-grid">
+      <div class="kpi-card blue">
+        <div class="kpi-label">💰 Total Revenue</div>
+        <div class="kpi-value blue">{{ fmtLkr(kpis.total_revenue) }}</div>
+        <div class="kpi-change up">▲ 18.4% vs last year</div>
+      </div>
+      <div class="kpi-card green">
+        <div class="kpi-label">🛒 Avg Cart Size</div>
+        <div class="kpi-value green">{{ fmtLkr(kpis.avg_cart_size) }}</div>
+        <div class="kpi-change up">▲ 9.2% vs last year</div>
+      </div>
+      <div class="kpi-card amber">
+        <div class="kpi-label">👥 Active Customers</div>
+        <div class="kpi-value amber">{{ fmtNum(kpis.active_customers) }}</div>
+        <div class="kpi-change up">▲ 6.1% vs last year</div>
+      </div>
+      <div class="kpi-card red">
+        <div class="kpi-label">⚠️ Low Stock Alerts</div>
+        <div class="kpi-value red">{{ kpis.low_stock_alerts }} SKUs</div>
+        <div class="kpi-change down">▼ Action required</div>
+      </div>
+      <div class="kpi-card purple">
+        <div class="kpi-label">🥇 Top Category</div>
+        <div class="kpi-value purple">{{ kpis.top_category }}</div>
+        <div class="kpi-change up">
+          ▲ {{ fmtLkr(kpis.top_category_revenue) }}
+        </div>
+      </div>
+      <div class="kpi-card green">
+        <div class="kpi-label">🕌 Halal Share</div>
+        <div class="kpi-value green">{{ kpis.halal_revenue_pct }}%</div>
+        <div class="kpi-change up">▲ of total sales</div>
+      </div>
+      <div class="kpi-card blue">
+        <div class="kpi-label">💎 Gold Members</div>
+        <div class="kpi-value blue">{{ fmtNum(kpis.gold_members) }}</div>
+        <div class="kpi-change up">▲ 12.3% growth</div>
+      </div>
+      <div class="kpi-card amber">
+        <div class="kpi-label">📦 Transactions</div>
+        <div class="kpi-value amber">{{ fmtNum(kpis.total_transactions) }}</div>
+        <div class="kpi-change up">▲ 11.8% vs last year</div>
+      </div>
+    </div>
+
+    <!-- CHART ROW 1 -->
+    <div class="chart-row-2">
+      <div class="chart-card span2">
+        <div class="chart-card-header">
+          <div>
+            <div class="chart-title">Monthly Revenue Trend</div>
+            <div class="chart-sub">All branches · 2024</div>
+          </div>
+          <span class="chart-type-badge">Line</span>
+        </div>
+        <div class="chart-canvas-wrap"><canvas id="chartMonthly"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-card-header">
+          <div>
+            <div class="chart-title">Revenue by Category</div>
+            <div class="chart-sub">Share of total</div>
+          </div>
+          <span class="chart-type-badge">Donut</span>
+        </div>
+        <div class="chart-canvas-wrap">
+          <canvas id="chartCategory"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- CHART ROW 2 -->
+    <div class="chart-row-3">
+      <div class="chart-card">
+        <div class="chart-card-header">
+          <div>
+            <div class="chart-title">Revenue by Branch</div>
+            <div class="chart-sub">Branch performance</div>
+          </div>
+          <span class="chart-type-badge">Bar</span>
+        </div>
+        <div class="chart-canvas-wrap"><canvas id="chartBranch"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-card-header">
+          <div>
+            <div class="chart-title">Loyalty Tier Avg Cart</div>
+            <div class="chart-sub">Customer segmentation</div>
+          </div>
+          <span class="chart-type-badge">Bar</span>
+        </div>
+        <div class="chart-canvas-wrap"><canvas id="chartLoyalty"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-card-header">
+          <div>
+            <div class="chart-title">Halal vs Non-Halal</div>
+            <div class="chart-sub">By area · LKR M</div>
+          </div>
+          <span class="chart-type-badge">Stacked</span>
+        </div>
+        <div class="chart-canvas-wrap"><canvas id="chartHalal"></canvas></div>
+      </div>
+    </div>
+
+    <!-- TOP 10 TABLE -->
+    <div class="table-card">
+      <div class="table-card-header">
+        <div class="chart-title">🏆 Top 10 Best Selling Products</div>
+        <div style="display: flex; gap: 8px">
+          <span class="chart-type-badge">All Categories</span>
+          <span class="chart-type-badge">2024</span>
+        </div>
+      </div>
+      <div class="table-scroll">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Product</th>
+              <th>Category</th>
+              <th>Brand</th>
+              <th>Revenue (LKR)</th>
+              <th>Units Sold</th>
+              <th>Avg Price</th>
+              <th>Halal</th>
+              <th>Trend</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (p of top10; track p.rank) {
+              <tr>
+                <td class="td-rank">{{ p.rank }}</td>
+                <td class="td-dim">{{ p.product_name }}</td>
+                <td>
+                  <span class="badge badge-info">{{ p.category }}</span>
+                </td>
+                <td style="color: var(--text2)">{{ p.brand }}</td>
+                <td class="td-num">
+                  LKR {{ (p.revenue_ytd / 1000000).toFixed(2) }}M
+                </td>
+                <td class="td-num">{{ p.units_sold_ytd?.toLocaleString() }}</td>
+                <td style="font-family: var(--mono); color: var(--text2)">
+                  LKR {{ p.avg_price_lkr?.toFixed(0) }}
+                </td>
+                <td>
+                  <span
+                    [class]="
+                      p.is_halal ? 'badge badge-halal' : 'badge badge-nonhalal'
+                    "
+                  >
+                    {{ p.is_halal ? "✓ Halal" : "—" }}
+                  </span>
+                </td>
+                <td>
+                  <div class="trend-bar">
+                    <div class="trend-bg">
+                      <div
+                        class="trend-fill"
+                        [style.width]="getTrendWidth(p.revenue_ytd)"
+                      ></div>
+                    </div>
+                    <span
+                      style="
+                        font-size: 10px;
+                        color: var(--text3);
+                        font-family: var(--mono);
+                      "
+                    >
+                      {{
+                        (
+                          (p.revenue_ytd / (top10[0]?.revenue_ytd || 1)) *
+                          100
+                        ).toFixed(0)
+                      }}%
+                    </span>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+</div>
