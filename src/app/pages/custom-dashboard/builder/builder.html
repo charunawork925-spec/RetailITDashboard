@@ -39,20 +39,17 @@
         </div>
       }
     </div>
-    <!-- LEGEND -->
     <div class="fp-legend">
-      <span class="ft-dim">D</span> Dimension &nbsp;
-      <span class="ft-msr">M</span> Measure &nbsp;
-      <span class="ft-date">T</span> Date &nbsp;
+      <span class="ft-dim">D</span> Dim &nbsp; <span class="ft-msr">M</span> Msr
+      &nbsp; <span class="ft-date">T</span> Date &nbsp;
       <span class="ft-bool">B</span> Bool
     </div>
   </aside>
 
   <!-- CENTRE: CANVAS -->
   <div class="canvas-area">
-    <!-- TOOLBAR -->
     <div class="canvas-toolbar">
-      <span class="ct-label">Add Widget</span>
+      <span class="ct-label">Add</span>
       <button class="ct-btn" (click)="addWidget('kpi')">🔢 KPI</button>
       <button class="ct-btn" (click)="addWidget('bar')">📊 Bar</button>
       <button class="ct-btn" (click)="addWidget('line')">📈 Line</button>
@@ -65,7 +62,6 @@
       </button>
     </div>
 
-    <!-- CANVAS DROP ZONE -->
     <div class="canvas-scroll">
       <div
         class="canvas-grid"
@@ -77,8 +73,9 @@
             <div class="empty-icon">⚡</div>
             <div class="empty-title">Build Your Report</div>
             <div class="empty-sub">
-              Drag any field from the left panel onto this canvas, or use the
-              toolbar above to add a widget. Then drag fields to configure it.
+              Drag fields from the left onto the canvas, or click the toolbar to
+              add a widget. Drop multiple fields on X and Y — grouped bars,
+              multi-lines and dual axes are handled automatically.
             </div>
           </div>
         }
@@ -91,11 +88,26 @@
             (dragover)="allowDrop($event)"
             (drop)="onWidgetDrop($event, w.id)"
           >
-            <!-- WIDGET HEADER -->
+            <!-- HEADER -->
             <div class="widget-header">
               <div class="widget-title-wrap">
                 <div class="widget-title">{{ w.title }}</div>
-                <div class="widget-ds">{{ getDsLabel(w.dataset) }}</div>
+                <div class="widget-meta">
+                  <span class="widget-ds">{{ getDsLabel(w.dataset) }}</span>
+                  @if (w.dimensions.length > 1) {
+                    <span class="meta-badge dim-badge"
+                      >{{ w.dimensions.length }} dims</span
+                    >
+                  }
+                  @if (w.measures.length > 1) {
+                    <span class="meta-badge msr-badge"
+                      >{{ w.measures.length }} measures</span
+                    >
+                  }
+                  @if (w.data?.chart?.dualAxis) {
+                    <span class="meta-badge dual-badge">⟺ Dual axis</span>
+                  }
+                </div>
               </div>
               <div class="widget-actions">
                 <button
@@ -122,7 +134,12 @@
               </div>
             </div>
 
-            <!-- WIDGET BODY -->
+            <!-- WARNING BANNER -->
+            @if (w.warning) {
+              <div class="widget-warning">⚠ {{ w.warning }}</div>
+            }
+
+            <!-- BODY -->
             <div class="widget-body">
               @if (w.loading) {
                 <div class="widget-loading"><div class="spinner"></div></div>
@@ -132,14 +149,28 @@
                 !w.dataset || (!w.dimensions.length && !w.measures.length)
               ) {
                 <div class="widget-placeholder">
-                  <span>Drop fields here to configure</span>
+                  Drop fields here to configure
                 </div>
               } @else if (w.type === "kpi") {
+                <!-- KPI — shows all measures as a summary row -->
                 <div class="kpi-body">
-                  <div class="kpi-big-val">{{ getKpiValue(w) }}</div>
-                  <div class="kpi-field-label">
-                    {{ w.measures[0]?.label || w.dimensions[0]?.label }}
-                  </div>
+                  @if (getMsrSummary(w).length > 1) {
+                    <div class="kpi-multi-row">
+                      @for (s of getMsrSummary(w); track s.label) {
+                        <div class="kpi-multi-item">
+                          <div class="kpi-multi-val" [style.color]="s.color">
+                            {{ s.value }}
+                          </div>
+                          <div class="kpi-multi-label">{{ s.label }}</div>
+                        </div>
+                      }
+                    </div>
+                  } @else {
+                    <div class="kpi-single-val">{{ getKpiValue(w) }}</div>
+                    <div class="kpi-field-label">
+                      {{ w.measures[0]?.label || w.dimensions[0]?.label }}
+                    </div>
+                  }
                 </div>
               } @else if (w.type === "grid") {
                 @if (w.data?.rows?.length) {
@@ -156,14 +187,14 @@
                         @for (row of w.data.rows; track $index) {
                           <tr>
                             @for (col of w.data.columns; track col) {
-                              <!-- <td
-                                [class]="w.measures.find(m=>m.key===col) ? 'td-num' : 'td-dim'"
-                              > -->
                               <td
                                 [class]="
                                   isMeasure(w, col) ? 'td-num' : 'td-dim'
                                 "
                               >
+                                <!-- <td
+                                [class]="w.measures.find(m => m.key === col) ? 'td-num' : 'td-dim'"
+                              > -->
                                 {{ row[col] }}
                               </td>
                             }
@@ -173,14 +204,16 @@
                     </table>
                   </div>
                 } @else {
-                  <div class="widget-placeholder">
-                    <span>Run to see data</span>
-                  </div>
+                  <div class="widget-placeholder">Hit ▶ Run to load data</div>
                 }
               } @else {
+                <!-- CHART -->
                 <div class="chart-wrap">
                   <canvas [id]="'canvas-' + w.id"></canvas>
                 </div>
+                @if (!w.data) {
+                  <div class="chart-hint">Hit ▶ Run to render chart</div>
+                }
               }
             </div>
           </div>
@@ -191,19 +224,16 @@
 
   <!-- RIGHT: CONFIG PANEL -->
   <aside class="config-panel">
-    <div class="cp-head">
-      <div class="cp-title">Widget Config</div>
-    </div>
+    <div class="cp-head"><div class="cp-title">Widget Config</div></div>
     <div class="cp-scroll">
       @if (!getSelected()) {
         <div class="cp-empty">
           <span style="font-size: 28px">👆</span>
-          <span>Select a widget to configure it</span>
+          <span>Select a widget to configure</span>
         </div>
       }
 
       @if (getSelected(); as w) {
-        <!-- SETTINGS -->
         <div class="cp-section">
           <div class="cp-section-title">Settings</div>
           <div class="cp-row">
@@ -231,7 +261,7 @@
               [(ngModel)]="w.dataset"
               (change)="updateWidgetDataset(w.id, w.dataset)"
             >
-              <option value="">— Select Dataset —</option>
+              <option value="">— Select —</option>
               @for (ds of datasets; track ds.id) {
                 <option [value]="ds.id">{{ ds.icon }} {{ ds.label }}</option>
               }
@@ -244,60 +274,76 @@
               <option [value]="4">Small (4)</option>
               <option [value]="6">Half (6)</option>
               <option [value]="8">Wide (8)</option>
-              <option [value]="12">Full Width (12)</option>
+              <option [value]="12">Full (12)</option>
             </select>
           </div>
         </div>
 
-        <!-- DIMENSIONS / X AXIS -->
+        <!-- DIMENSIONS -->
         <div class="cp-section">
-          <div class="cp-section-title">Dimensions (X Axis)</div>
+          <div class="cp-section-title">
+            Dimensions (X Axis)
+            <span class="axis-tip">supports multiple</span>
+          </div>
           <div
             class="axis-drop"
             (dragover)="allowDrop($event)"
             (drop)="onAxisDrop($event, w.id, 'x')"
           >
             @if (!w.dimensions.length) {
-              <span class="axis-hint">Drop dimension fields here</span>
+              <span class="axis-hint">Drop D / T / B fields here</span>
             }
             @for (f of w.dimensions; track f.key) {
               <span class="axis-chip chip-dim">
                 {{ f.label }}
-                <span
-                  class="chip-rm"
-                  (click)="removeFieldFromWidget(w.id, f.key, 'x')"
+                <span class="chip-rm" (click)="removeField(w.id, f.key, 'x')"
                   >✕</span
                 >
               </span>
             }
           </div>
+          @if (w.dimensions.length > 1) {
+            <div class="axis-note">
+              📌 Labels will be composed: Area / Gender / …
+            </div>
+          }
         </div>
 
-        <!-- MEASURES / Y AXIS -->
+        <!-- MEASURES -->
         <div class="cp-section">
-          <div class="cp-section-title">Measures (Y Axis)</div>
+          <div class="cp-section-title">
+            Measures (Y Axis)
+            <span class="axis-tip">supports multiple</span>
+          </div>
           <div
             class="axis-drop"
             (dragover)="allowDrop($event)"
             (drop)="onAxisDrop($event, w.id, 'y')"
           >
             @if (!w.measures.length) {
-              <span class="axis-hint">Drop measure fields here</span>
+              <span class="axis-hint">Drop M fields here</span>
             }
             @for (f of w.measures; track f.key) {
               <span class="axis-chip chip-msr">
                 {{ f.label }}
-                <span
-                  class="chip-rm"
-                  (click)="removeFieldFromWidget(w.id, f.key, 'y')"
+                <span class="chip-rm" (click)="removeField(w.id, f.key, 'y')"
                   >✕</span
                 >
               </span>
             }
           </div>
+          @if (w.measures.length > 1) {
+            <div class="axis-note">
+              @if (w.data?.chart?.dualAxis) {
+                ⟺ Dual Y-axis auto-detected (scale difference too large)
+              } @else {
+                📊 Grouped chart — bars side by side
+              }
+            </div>
+          }
         </div>
 
-        <!-- RUN BUTTON -->
+        <!-- RUN -->
         <div class="cp-section">
           <button
             class="btn btn-green"
@@ -308,13 +354,21 @@
           </button>
         </div>
 
-        <!-- DATA PREVIEW -->
         @if (w.data) {
           <div class="cp-section">
-            <div class="cp-section-title">Data Preview</div>
+            <div class="cp-section-title">Result</div>
             <div class="cp-stat">
-              Rows returned: <strong>{{ w.data.count }}</strong>
+              Rows: <strong>{{ w.data.count }}</strong>
             </div>
+            <div class="cp-stat">
+              Dimensions: <strong>{{ w.dimensions.length }}</strong>
+            </div>
+            <div class="cp-stat">
+              Measures: <strong>{{ w.measures.length }}</strong>
+            </div>
+            @if (w.data.chart?.dualAxis) {
+              <div class="cp-stat dual-info">⟺ Dual Y-axis active</div>
+            }
           </div>
         }
       }
@@ -322,7 +376,6 @@
   </aside>
 </div>
 
-<!-- TOAST -->
 @if (toast) {
-  <div class="toast-bar">✓ {{ toast }}</div>
+  <div class="toast-bar">{{ toast }}</div>
 }

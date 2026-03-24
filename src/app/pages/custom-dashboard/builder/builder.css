@@ -652,3 +652,132 @@
     transform: translateY(0);
   }
 }
+
+/* ── MULTI-FIELD META BADGES ────────────────────────────── */
+.widget-meta {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+  margin-top: 2px;
+}
+.meta-badge {
+  padding: 1px 6px;
+  border-radius: 10px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+.dim-badge {
+  background: rgba(139, 92, 246, 0.2);
+  color: var(--purple);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+}
+.msr-badge {
+  background: rgba(59, 130, 246, 0.2);
+  color: var(--accent);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+.dual-badge {
+  background: rgba(6, 182, 212, 0.15);
+  color: var(--cyan);
+  border: 1px solid rgba(6, 182, 212, 0.3);
+}
+
+/* ── WARNING BANNER ─────────────────────────────────────── */
+.widget-warning {
+  background: rgba(245, 158, 11, 0.08);
+  border-bottom: 1px solid rgba(245, 158, 11, 0.2);
+  color: var(--amber);
+  font-size: 11px;
+  padding: 5px 12px;
+}
+
+/* ── CHART HINT ─────────────────────────────────────────── */
+.chart-hint {
+  text-align: center;
+  font-size: 11px;
+  color: var(--text3);
+  padding: 6px 0 2px;
+}
+
+/* ── KPI MULTI-MEASURE ──────────────────────────────────── */
+.kpi-body {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  flex: 1;
+  padding: 4px 0;
+}
+.kpi-single-val {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: -1px;
+  margin-bottom: 6px;
+}
+.kpi-field-label {
+  font-size: 11px;
+  color: var(--text3);
+  border-top: 1px solid var(--border);
+  padding-top: 8px;
+}
+
+.kpi-multi-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 4px 0;
+}
+.kpi-multi-item {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+  min-width: 80px;
+  border-left: 2px solid var(--border2);
+  padding-left: 10px;
+}
+.kpi-multi-val {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+.kpi-multi-label {
+  font-size: 10px;
+  color: var(--text3);
+  font-weight: 500;
+}
+
+/* ── CONFIG PANEL ADDITIONS ─────────────────────────────── */
+.axis-tip {
+  font-size: 9px;
+  color: var(--green);
+  font-weight: 500;
+  margin-left: 6px;
+  text-transform: none;
+  letter-spacing: 0;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  padding: 1px 5px;
+  border-radius: 8px;
+  background: rgba(16, 185, 129, 0.08);
+}
+
+.axis-note {
+  font-size: 10px;
+  color: var(--cyan);
+  margin-top: 5px;
+  padding: 4px 6px;
+  border-radius: 4px;
+  background: rgba(6, 182, 212, 0.06);
+  border: 1px solid rgba(6, 182, 212, 0.15);
+}
+
+.cp-stat.dual-info {
+  color: var(--cyan);
+  background: rgba(6, 182, 212, 0.06);
+  border: 1px solid rgba(6, 182, 212, 0.15);
+  border-radius: 4px;
+  padding: 4px 6px;
+  margin-top: 4px;
+}
