@@ -8,6 +8,7 @@ import {
   ApiService,
   QueryRequest,
 } from '../../../services/api.service';
+import { Router } from '@angular/router';
 Chart.register(...registerables);
 
 export interface WidgetConfig {
@@ -56,7 +57,10 @@ export class Builder implements OnInit {
   private charts = new Map<string, Chart>();
   private idCounter = 0;
 
-  constructor(private api: ApiService) {}
+  constructor(
+    private api: ApiService,
+    private router: Router,
+  ) {}
 
   ngOnInit() {
     this.api.getDatasets().subscribe({
@@ -566,5 +570,8 @@ export class Builder implements OnInit {
 
   isMeasure(w: WidgetConfig, col: string): boolean {
     return !!w.measures?.some((m) => m.key === col);
+  }
+  goBack() {
+    this.router.navigate(['/dashboard']);
   }
 }

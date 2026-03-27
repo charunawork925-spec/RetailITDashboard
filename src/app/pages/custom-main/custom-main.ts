@@ -5,7 +5,7 @@ import {
   RouterLinkActive,
   Router,
 } from '@angular/router';
-import { CommonModule } from '@angular/common'; // Add this import
+import { CommonModule } from '@angular/common';
 
 interface NavItem {
   id: string;
@@ -19,7 +19,7 @@ interface NavItem {
 
 @Component({
   selector: 'app-custom-main',
-  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive], // Add CommonModule here
+  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive],
   templateUrl: './custom-main.html',
   styleUrl: './custom-main.css',
 })
