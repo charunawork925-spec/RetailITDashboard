@@ -152,7 +152,7 @@ export class SalesTrendWidgetComponent
 
   constructor(
     filterService: FilterService,
-    private analyticsService: AnalyticsService, // NEW
+    private analyticsService: AnalyticsService,
   ) {
     super(filterService);
   }
