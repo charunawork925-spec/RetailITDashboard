@@ -14,7 +14,7 @@
 </div>
 
 <div class="builder-shell">
-  <!-- LEFT: FIELD PANEL -->
+  <!-- LEFT FIELD PANEL -->
   <aside class="field-panel">
     <div class="fp-head">
       <div class="fp-title">
@@ -71,7 +71,7 @@
     </div>
   </aside>
 
-  <!-- CENTRE: CANVAS -->
+  <!-- CANVAS AREA -->
   <div class="canvas-area">
     <div class="canvas-toolbar">
       <span class="ct-label">Add</span>
@@ -85,8 +85,28 @@
         <button class="ct-btn" (click)="addWidget('line')" title="Line Chart">
           <i class="fa-solid fa-chart-line"></i><span>Line</span>
         </button>
+        <button
+          class="ct-btn"
+          (click)="addWidget('stacked')"
+          title="Stacked Bar"
+        >
+          <i class="fa-solid fa-chart-column"></i><span>Stacked</span>
+        </button>
+        <button
+          class="ct-btn"
+          (click)="addWidget('hbar')"
+          title="Horizontal Bar"
+        >
+          <i class="fa-solid fa-bars-staggered"></i><span>H-Bar</span>
+        </button>
+        <button class="ct-btn" (click)="addWidget('area')" title="Area Chart">
+          <i class="fa-solid fa-chart-area"></i><span>Area</span>
+        </button>
         <button class="ct-btn" (click)="addWidget('pie')" title="Pie Chart">
           <i class="fa-solid fa-chart-pie"></i><span>Pie</span>
+        </button>
+        <button class="ct-btn" (click)="addWidget('doughnut')" title="Doughnut">
+          <i class="fa-regular fa-circle"></i><span>Dount</span>
         </button>
         <button class="ct-btn" (click)="addWidget('grid')" title="Data Grid">
           <i class="fa-solid fa-table"></i><span>Grid</span>
@@ -118,9 +138,9 @@
             </div>
             <div class="empty-title">Build Your Report</div>
             <div class="empty-sub">
-              Drag fields from the left panel onto this canvas, or use the
-              toolbar to add a widget. Multiple fields on X and Y are fully
-              supported.
+              Drag fields from the left panel, or click toolbar buttons to add
+              widgets. Use "Join With" in the config panel to combine datasets
+              (e.g. Products + Transactions for GP by Month).
             </div>
           </div>
         }
@@ -133,6 +153,7 @@
             (dragover)="allowDrop($event)"
             (drop)="onWidgetDrop($event, w.id)"
           >
+            <!-- WIDGET HEADER -->
             <div class="widget-header">
               <div class="widget-title-wrap">
                 <div class="widget-type-icon">
@@ -144,7 +165,15 @@
                     <i class="fa-solid fa-chart-pie"></i>
                   } @else if (w.type === "kpi") {
                     <i class="fa-solid fa-gauge-high"></i>
-                  } @else if (w.type === "grid") {
+                  } @else if (w.type === "stacked") {
+                    <i class="fa-solid fa-chart-column"></i>
+                  } @else if (w.type === "hbar") {
+                    <i class="fa-solid fa-bars-staggered"></i>
+                  } @else if (w.type === "area") {
+                    <i class="fa-solid fa-chart-area"></i>
+                  } @else if (w.type === "doughnut") {
+                    <i class="fa-regular fa-circle"></i>
+                  } @else {
                     <i class="fa-solid fa-table"></i>
                   }
                 </div>
@@ -152,6 +181,12 @@
                   <div class="widget-title">{{ w.title }}</div>
                   <div class="widget-meta">
                     <span class="widget-ds">{{ getDsLabel(w.dataset) }}</span>
+                    @if (w.joinDataset) {
+                      <span class="meta-badge join-badge"
+                        ><i class="fa-solid fa-link"></i> +
+                        {{ getDsLabel(w.joinDataset) }}</span
+                      >
+                    }
                     @if (w.dimensions.length > 1) {
                       <span class="meta-badge dim-badge"
                         ><i class="fa-solid fa-layer-group"></i>
@@ -166,14 +201,14 @@
                     }
                     @if (w.data?.chart?.dualAxis) {
                       <span class="meta-badge dual-badge"
-                        ><i class="fa-solid fa-arrows-left-right"></i> Dual
-                        axis</span
+                        ><i class="fa-solid fa-arrows-left-right"></i>
+                        Dual</span
                       >
                     }
-                    @if (w.filters.length > 0) {
+                    @if (getActiveFilters(w).length > 0) {
                       <span class="meta-badge filter-badge"
                         ><i class="fa-solid fa-filter"></i>
-                        {{ getActiveFilters(w).length }} filters</span
+                        {{ getActiveFilters(w).length }}</span
                       >
                     }
                   </div>
@@ -186,6 +221,35 @@
                   title="Run"
                 >
                   <i class="fa-solid fa-play"></i>
+                </button>
+                <button
+                  class="w-action"
+                  (click)="$event.stopPropagation(); toggleTable(w)"
+                  title="Toggle table/chart"
+                  [class.active-action]="w.showTable"
+                >
+                  <i class="fa-solid fa-table"></i>
+                </button>
+                <button
+                  class="w-action"
+                  (click)="$event.stopPropagation(); exportCSV(w)"
+                  title="Download CSV"
+                >
+                  <i class="fa-solid fa-file-csv"></i>
+                </button>
+                <button
+                  class="w-action"
+                  (click)="$event.stopPropagation(); exportPNG(w)"
+                  title="Save PNG"
+                >
+                  <i class="fa-solid fa-image"></i>
+                </button>
+                <button
+                  class="w-action"
+                  (click)="$event.stopPropagation(); duplicateWidget(w.id)"
+                  title="Duplicate"
+                >
+                  <i class="fa-solid fa-copy"></i>
                 </button>
                 <button
                   class="w-action"
@@ -204,33 +268,13 @@
               </div>
             </div>
 
-            <!-- ACTIVE FILTER PILLS on widget -->
-            @if (getActiveFilters(w).length > 0) {
-              <div class="widget-filter-pills">
-                @for (f of getActiveFilters(w); track f.field) {
-                  <span class="filter-pill">
-                    <i class="fa-solid fa-filter"></i>
-                    {{ f.label }}: <strong>{{ f.value }}</strong>
-                    <span
-                      class="pill-rm"
-                      (click)="
-                        $event.stopPropagation();
-                        removeFilter(w, f.field);
-                        runWidget(w)
-                      "
-                      ><i class="fa-solid fa-xmark"></i
-                    ></span>
-                  </span>
-                }
-              </div>
-            }
-
             @if (w.warning) {
               <div class="widget-warning">
                 <i class="fa-solid fa-triangle-exclamation"></i> {{ w.warning }}
               </div>
             }
 
+            <!-- WIDGET BODY -->
             <div class="widget-body">
               @if (w.loading) {
                 <div class="widget-loading"><div class="spinner"></div></div>
@@ -266,7 +310,7 @@
                     </div>
                   }
                 </div>
-              } @else if (w.type === "grid") {
+              } @else if (w.type === "grid" || w.showTable) {
                 @if (w.data?.rows?.length) {
                   <div class="grid-scroll">
                     <table class="data-table">
@@ -316,7 +360,7 @@
     </div>
   </div>
 
-  <!-- RIGHT: CONFIG PANEL -->
+  <!-- RIGHT CONFIG PANEL -->
   <aside class="config-panel">
     <div class="cp-head">
       <div class="cp-title">
@@ -344,24 +388,26 @@
           <div class="cp-row">
             <label class="cp-label">Chart Type</label>
             <div class="cp-select-wrap">
-              <i class="fa-solid fa-chart-bar cp-select-icon"></i>
               <select
                 class="cp-select"
                 [(ngModel)]="w.type"
                 (change)="updateWidgetType(w.id, w.type)"
               >
-                <option value="bar">Bar Chart</option>
-                <option value="line">Line Chart</option>
-                <option value="pie">Pie / Donut</option>
-                <option value="kpi">KPI Card</option>
-                <option value="grid">Data Grid</option>
+                <option value="bar">📊 Bar Chart</option>
+                <option value="line">📈 Line Chart</option>
+                <option value="stacked">📊 Stacked Bar</option>
+                <option value="hbar">↔ Horizontal Bar</option>
+                <option value="area">📉 Area Chart</option>
+                <option value="pie">🥧 Pie Chart</option>
+                <option value="doughnut">⭕ Doughnut</option>
+                <option value="kpi">🔢 KPI Card</option>
+                <option value="grid">📋 Data Grid</option>
               </select>
             </div>
           </div>
           <div class="cp-row">
             <label class="cp-label">Dataset</label>
             <div class="cp-select-wrap">
-              <i class="fa-solid fa-database cp-select-icon"></i>
               <select
                 class="cp-select"
                 [(ngModel)]="w.dataset"
@@ -374,10 +420,38 @@
               </select>
             </div>
           </div>
+
+          <!-- JOIN WITH -->
+          @if (w.dataset && getJoinTargets(w.dataset).length > 0) {
+            <div class="cp-row">
+              <label class="cp-label"
+                ><i class="fa-solid fa-link" style="color: var(--cyan)"></i>
+                Join With</label
+              >
+              <div class="cp-select-wrap">
+                <select
+                  class="cp-select"
+                  [(ngModel)]="w.joinDataset"
+                  (change)="updateJoinDataset(w.id, w.joinDataset)"
+                >
+                  <option value="">None (single table)</option>
+                  @for (jid of getJoinTargets(w.dataset); track jid) {
+                    <option [value]="jid">{{ getDsLabel(jid) }}</option>
+                  }
+                </select>
+              </div>
+              @if (w.joinDataset) {
+                <div class="join-note">
+                  <i class="fa-solid fa-circle-info"></i> Extra fields from
+                  {{ getDsLabel(w.joinDataset) }} now available
+                </div>
+              }
+            </div>
+          }
+
           <div class="cp-row">
             <label class="cp-label">Width</label>
             <div class="cp-select-wrap">
-              <i class="fa-solid fa-arrows-left-right cp-select-icon"></i>
               <select class="cp-select" [(ngModel)]="w.span">
                 <option [value]="3">Narrow (3)</option>
                 <option [value]="4">Small (4)</option>
@@ -403,27 +477,26 @@
             @if (!w.dimensions.length) {
               <span class="axis-hint"
                 ><i class="fa-solid fa-arrow-down-to-bracket"></i> Drop D / T /
-                B fields here</span
+                B fields</span
               >
             }
             @for (f of w.dimensions; track f.key) {
               <span class="axis-chip chip-dim"
-                >{{ f.label }}
-                <span class="chip-rm" (click)="removeField(w.id, f.key, 'x')"
-                  ><i class="fa-solid fa-xmark"></i
-                ></span>
-              </span>
+                >{{ f.label
+                }}<span class="chip-rm" (click)="removeField(w.id, f.key, 'x')"
+                  ><i class="fa-solid fa-xmark"></i></span
+              ></span>
             }
           </div>
           @if (w.dimensions.length > 1) {
             <div class="axis-note">
               <i class="fa-solid fa-circle-info"></i> Labels composed: Area /
-              Gender / …
+              Month…
             </div>
           }
         </div>
 
-        <!-- MEASURES -->
+        <!-- MEASURES with aggregation selectors -->
         <div class="cp-section">
           <div class="cp-section-title">
             <i class="fa-solid fa-chart-simple"></i> Measures (Y Axis)
@@ -436,17 +509,30 @@
           >
             @if (!w.measures.length) {
               <span class="axis-hint"
-                ><i class="fa-solid fa-arrow-down-to-bracket"></i> Drop M fields
-                here</span
+                ><i class="fa-solid fa-arrow-down-to-bracket"></i> Drop M
+                fields</span
               >
             }
             @for (f of w.measures; track f.key) {
-              <span class="axis-chip chip-msr"
-                >{{ f.label }}
-                <span class="chip-rm" (click)="removeField(w.id, f.key, 'y')"
-                  ><i class="fa-solid fa-xmark"></i
+              <div class="msr-row">
+                <span class="axis-chip chip-msr"
+                  >{{ f.label
+                  }}<span
+                    class="chip-rm"
+                    (click)="removeField(w.id, f.key, 'y')"
+                    ><i class="fa-solid fa-xmark"></i></span
                 ></span>
-              </span>
+                <select
+                  class="agg-select"
+                  [(ngModel)]="w.aggFunctions[f.key]"
+                  (change)="setAgg(w, f.key, w.aggFunctions[f.key] || 'SUM')"
+                  title="Aggregation function"
+                >
+                  @for (fn of AGG_OPTIONS; track fn) {
+                    <option [value]="fn">{{ fn }}</option>
+                  }
+                </select>
+              </div>
             }
           </div>
           @if (w.measures.length > 1) {
@@ -455,121 +541,108 @@
                 <i class="fa-solid fa-arrows-left-right"></i> Dual Y-axis
                 auto-detected
               } @else {
-                <i class="fa-solid fa-chart-bar"></i> Grouped bars side by side
+                <i class="fa-solid fa-chart-bar"></i> Grouped chart
               }
             </div>
           }
         </div>
 
         <!-- FILTERS -->
-        @if (w.dataset && getFilterFields(w.dataset).length > 0) {
+        @if (w.dataset && getFilterableFields(w.dataset).length > 0) {
           <div class="cp-section">
             <div class="cp-section-title">
               <i class="fa-solid fa-filter"></i> Filters
             </div>
-
-            <!-- Add filter dropdown -->
-            <div class="filter-add-row">
-              <select
-                class="cp-select filter-add-select"
-                (change)="
-                  addFilter(w, $any($event.target).value);
-                  $any($event.target).value = ''
-                "
-              >
-                <option value="">+ Add filter…</option>
-                @for (
-                  filterField of getAvailableFilterFields(w);
-                  track filterField.field
-                ) {
-                  <option [value]="filterField.field">
-                    {{ filterField.label }}
-                  </option>
-                }
-              </select>
-            </div>
-            <!-- <div class="filter-add-row">
-              <select
-                class="cp-select filter-add-select"
-                (change)="
-                  addFilter(w, $any($event.target).value);
-                  $any($event.target).value = ''
-                "
-              >
-                <option value="">+ Add filter…</option>
-                @for (ff of getFilterFields(w.dataset); track ff) {
-                  @if (!w.filters.find(f => f.field === ff)) {
-                    <option [value]="ff">
-                      {{ getFilterLabel(w.dataset, ff) }}
-                    </option>
+            <div class="cp-row">
+              <div class="cp-select-wrap">
+                <i class="fa-solid fa-plus cp-select-icon"></i>
+                <select
+                  class="cp-select"
+                  (change)="onAddFilterSelect(w, $event)"
+                >
+                  <option value="">+ Add filter…</option>
+                  @for (ff of getFilterableFields(w.dataset); track ff.key) {
+                    @if (!isFilterSelected(w, ff.key)) {
+                      <option [value]="ff.key">{{ ff.label }}</option>
+                    }
                   }
-                }
-              </select>
-            </div> -->
-
-            <!-- Active filter rows -->
+                  <!-- @for (ff of getFilterableFields(w.dataset); track ff.key) {
+                    @if (!w.filters.find(f => f.field === ff.key)) {
+                      <option [value]="ff.key">{{ ff.label }}</option>
+                    }
+                  } -->
+                </select>
+              </div>
+            </div>
             @for (flt of w.filters; track flt.field) {
               <div class="filter-row">
-                <div class="filter-row-label">
-                  <i
-                    class="fa-solid fa-filter-circle-xmark filter-label-icon"
-                  ></i>
-                  {{ flt.label }}
+                <div class="filter-label">
+                  <i class="fa-solid fa-tag"></i> {{ flt.label }}
                 </div>
-                <div class="filter-row-controls">
-                  @if (getFilterOptions(w.dataset, flt.field).length > 0) {
-                    <select
-                      class="cp-select filter-val-select"
-                      [(ngModel)]="flt.value"
-                    >
-                      <option value="">All</option>
+                <div class="filter-controls">
+                  <select class="filter-op" [(ngModel)]="flt.op">
+                    <option value="=">=</option>
+                    <option value="!=">≠</option>
+                    <option value=">">></option>
+                    <option value="<"><</option>
+                    <option value=">=">≥</option>
+                    <option value="<=">≤</option>
+                    <option value="IN">IN</option>
+                    <option value="LIKE">LIKE</option>
+                  </select>
+                  @if (
+                    getFilterOptions(w.dataset, flt.field).length > 0 &&
+                    flt.op !== "IN" &&
+                    flt.op !== "LIKE"
+                  ) {
+                    <select class="filter-val" [(ngModel)]="flt.value">
+                      <option value="">Any</option>
                       @for (
                         opt of getFilterOptions(w.dataset, flt.field);
-                        track opt
+                        track opt.value
                       ) {
-                        <option [value]="opt">
-                          {{
-                            opt === true ? "Yes" : opt === false ? "No" : opt
-                          }}
-                        </option>
+                        <option [value]="opt.value">{{ opt.label }}</option>
                       }
                     </select>
                   } @else {
                     <input
-                      class="cp-input filter-val-input"
+                      class="filter-val-input"
                       [(ngModel)]="flt.value"
-                      placeholder="value…"
+                      [placeholder]="
+                        flt.op === 'IN'
+                          ? 'val1, val2, val3'
+                          : flt.op === 'LIKE'
+                            ? 'search text…'
+                            : 'value…'
+                      "
                     />
                   }
                   <button
-                    class="filter-remove-btn"
+                    class="filter-rm"
                     (click)="removeFilter(w, flt.field)"
-                    title="Remove filter"
                   >
                     <i class="fa-solid fa-xmark"></i>
                   </button>
                 </div>
               </div>
             }
-
             @if (w.filters.length > 0) {
-              <div class="filter-hint">
+              <div class="filter-summary">
                 <i class="fa-solid fa-circle-info"></i>
-                {{ getActiveFilters(w).length }} of
-                {{ w.filters.length }} filters active. Click Run to apply.
+                {{ getActiveFilters(w).length }} / {{ w.filters.length }} active
               </div>
             }
           </div>
         }
 
-        <!-- RUN BUTTON -->
+        <!-- RUN -->
         <div class="cp-section">
           <button class="run-widget-btn" (click)="runWidget(w)">
             <i class="fa-solid fa-play"></i> Run Widget
           </button>
         </div>
 
-        <!-- RESULT STATS -->
+        <!-- RESULT -->
         @if (w.data) {
           <div class="cp-section">
             <div class="cp-section-title">
@@ -599,6 +672,18 @@
                 </div>
               </div>
             </div>
+            <div class="export-btns">
+              <button class="export-btn" (click)="exportCSV(w)">
+                <i class="fa-solid fa-file-csv"></i> CSV
+              </button>
+              <button class="export-btn" (click)="exportPNG(w)">
+                <i class="fa-solid fa-image"></i> PNG
+              </button>
+              <button class="export-btn" (click)="toggleTable(w)">
+                <i class="fa-solid fa-table"></i>
+                {{ w.showTable ? "Chart" : "Table" }}
+              </button>
+            </div>
             @if (w.data.chart?.dualAxis) {
               <div class="cp-stat dual-info">
                 <i class="fa-solid fa-arrows-left-right"></i> Dual Y-axis active
@@ -612,7 +697,14 @@
 </div>
 
 @if (toast) {
-  <div class="toast-bar">
-    <i class="fa-solid fa-circle-check"></i> {{ toast }}
+  <div class="toast-bar" [class.toast-error]="toastType === 'error'">
+    <i
+      [class]="
+        toastType === 'error'
+          ? 'fa-solid fa-circle-exclamation'
+          : 'fa-solid fa-circle-check'
+      "
+    ></i>
+    {{ toast }}
   </div>
 }
